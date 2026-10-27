@@ -294,7 +294,7 @@
     "scrollFactor": 1.0,
     "naturalScroll": false,
     "sensitivity": -0.4,
-    "accelProfile": "flat",
+    "accelProfile": "adaptive",
     "declaredCpi": 3200
   }
 }
