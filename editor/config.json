@@ -70,7 +70,7 @@
           "&kp LALT",
           "&kp LCTRL",
           "&mo 1",
-          "&mo 2",
+          "&kp LALT",
           "&kp DEL",
           "&kp RET"
         ]
