@@ -13,6 +13,6 @@ for _, name in ipairs({ "skree-custom-mouse", "zmk-project-skree-custom-mouse" }
     scroll_button_lock = false,
     scroll_factor = 1.0,
     natural_scroll = false,
-    sensitivity = -0.8,
+    sensitivity = -1.0,
   })
 end
