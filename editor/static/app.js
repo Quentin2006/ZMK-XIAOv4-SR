@@ -40,6 +40,7 @@ function effectiveBinding(index) {
 }
 function labelFor(binding,short=false) {
   const [behavior,arg,extra]=binding.split(/\s+/);
+  if(behavior==="&kp"&&["C_PLAY_PAUSE","C_MUTE","C_VOL_DN","C_VOL_UP"].includes(arg))return ({C_PLAY_PAUSE:short?"Play":"Play/Pause",C_MUTE:"Mute",C_VOL_DN:short?"Vol −":"Volume down",C_VOL_UP:short?"Vol +":"Volume up"})[arg];
   if(behavior==="&kp")return symbols[arg]||(/^N[0-9]$/.test(arg)?arg.slice(1):arg);
   if(behavior==="&mo")return `L${arg}`;
   if(behavior==="&to")return `→ L${arg}`;
