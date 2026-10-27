@@ -291,7 +291,7 @@
     "holdToScroll": true,
     "scrollButton": "right",
     "middleClick": "left-right-chord",
-    "scrollFactor": 0.1,
+    "scrollFactor": 0.4,
     "naturalScroll": false,
     "sensitivity": -0.4,
     "accelProfile": "adaptive",
