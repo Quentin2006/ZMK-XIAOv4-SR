@@ -26,9 +26,11 @@ For a temporary foreground session, stop the service first and run `python3 edit
 ## Edit and save
 
 1. Select a layer and a physical key. Choose a key, modifier expression such as `LC(C)`, layer action, mouse button, Bluetooth action, or lighting action. You can also record a single physical key.
-2. Adjust Desktop and Trackball preferences as needed. Unsaved drafts stay in your browser; JSON export is available.
-3. Choose **Review & save** to inspect the changed keys and exact file diffs. **Commit & push to GitHub** writes a commit to `skree-control-panel` in `Quentin2006/ZMK-XIAOv4-SR`.
-4. For computer settings, open **Desktop → Apply saved desktop profile**. For firmware changes, build and flash separately.
+2. Adjust Trackball preferences or expand **Desktop keyboard preferences** below the keymap. Sensor resolution and timing are under **Advanced sensor settings**. Unsaved drafts stay in your browser.
+3. Choose **Review changes**, then **Save & apply**. This commits and pushes to `skree-control-panel` in `Quentin2006/ZMK-XIAOv4-SR` and applies saved Hyprland preferences in the same action. Git details, an editable commit message, and exact file diffs are available inside the review dialog.
+4. Key assignments and firmware sensor settings still need a build and flash. The system DPI declaration still needs the separate installer below.
+
+The status strip shows whether desktop settings are applied. If applying fails, the saved commit is retained, the previous desktop files are restored, and **Apply saved settings** offers a retry. Desktop apply is attempted even if the GitHub push fails; each failure is reported separately. A profile already applied is left in place. The unused layer is hidden by default; **Show unused layer** exposes it without renumbering the firmware. JSON export and repository details are on History.
 
 History can load an earlier configuration as a draft; saving it creates a new commit. A failed push retains the local commit and offers Retry push, including after a page reload. Refresh from GitHub fetches this branch and permits fast-forward updates only. Other local edits, stale revisions, changed remotes, and generated-source drift block writes for review.
 
@@ -38,7 +40,7 @@ The editor intentionally uses a separate branch. Merge its pull request when rea
 
 | Setting | Takes effect |
 | --- | --- |
-| Slash/backslash swap, hold-button scrolling, middle-button emulation, scroll speed/direction, pointer sensitivity | On this computer after saving and applying the Desktop profile |
+| Slash/backslash swap, hold-button scrolling, middle-button emulation, scroll speed/direction, pointer sensitivity | On this computer when you choose Save & apply |
 | Key bindings, layers, sensor CPI, automatic mouse-layer timeout | On the keyboard after building and flashing matching firmware |
 
 The trackball now uses **3200 CPI**, a matching **3200-DPI desktop declaration**, and **adaptive acceleration at sensitivity -0.4**. This provides slower fine movements and faster large movements. It is a starting point to tune by feel.
@@ -54,7 +56,7 @@ python3 editor/install-dpi.py --dry-run
 pkexec /usr/bin/python3 "$PWD/editor/install-dpi.py"
 ```
 
-This backs up any previous managed declaration, rebuilds the system hardware database, and updates only Skree input nodes. Reconnect the keyboard afterwards so libinput reads the new resolution. The web server never invokes the privileged installer. Desktop Apply separately applies acceleration and sensitivity through the user-owned Hyprland module. Other mice do not match these DPI rules.
+This backs up any previous managed declaration, rebuilds the system hardware database, and updates only Skree input nodes. Reconnect the keyboard afterwards so libinput reads the new resolution. The web server never invokes the privileged installer. Save & apply loads acceleration and sensitivity through the user-owned Hyprland module. Other mice do not match these DPI rules.
 
 The baseline desktop profile retains the existing slash swap and right-button hold-to-scroll. Left+right mouse-button emulation is optional. **Right-click + Backspace is not implemented as a desktop chord.** To assign a dedicated middle-click key in firmware, choose a key on the Mouse layer and set Mouse button → Middle click. This changes that key whenever the Mouse layer is active.
 

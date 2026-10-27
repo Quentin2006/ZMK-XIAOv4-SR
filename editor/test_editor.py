@@ -173,6 +173,58 @@ class WorkspaceTests(unittest.TestCase):
         self.assertTrue(self.workspace.push({'revision':self.workspace.revision()})['pushed'])
         self.assertFalse(self.workspace.state()['pendingPush'])
 
+    def test_save_and_apply_reports_partial_failures_without_losing_commit(self):
+        home=Path(self.temp.name)/'home'
+        hypr=home/'.config/hypr';hypr.mkdir(parents=True)
+        inputs=hypr/'input.lua';inputs.write_text('-- preserve user settings\n')
+        module=hypr/'skree-control.lua'
+        actual_run=subprocess.run
+        for fail_push, fail_apply in [(False,False),(True,False),(False,True),(True,True)]:
+            with self.subTest(fail_push=fail_push,fail_apply=fail_apply):
+                module.write_text('-- previous working desktop\n')
+                old_inputs=inputs.read_bytes()
+                self.workspace.fail_push=fail_push
+                payload=self.payload();payload['applyDesktop']=True
+                current=json.loads((self.root/model.CONFIG).read_text())
+                payload['config']=copy.deepcopy(current)
+                payload['config']['hyprland']['naturalScroll']=not current['hyprland']['naturalScroll']
+                def run(command,*args,**kwargs):
+                    if command[0]=='xkbcli':return subprocess.CompletedProcess(command,0,'','')
+                    if command[0]=='hyprctl':return subprocess.CompletedProcess(command,0,'invalid profile' if fail_apply and command[1]=='configerrors' else '', '')
+                    return actual_run(command,*args,**kwargs)
+                with patch.object(model,'ROOT',self.root),patch.object(Path,'home',return_value=home),patch.object(server.subprocess,'run',side_effect=run):
+                    result=self.workspace.save(payload)
+                self.assertEqual(result['pushed'],not fail_push)
+                self.assertEqual(bool(result['applyError']),fail_apply)
+                self.assertEqual(result['state']['desktopApplied'],not fail_apply)
+                self.assertEqual(result['commit'],self.workspace.head())
+                self.assertFalse(result['state']['dirty'])
+                self.assertEqual(json.loads((self.root/model.CONFIG).read_text())['hyprland'],payload['config']['hyprland'])
+                if fail_apply:
+                    self.assertEqual(module.read_text(),'-- previous working desktop\n')
+                    self.assertEqual(inputs.read_bytes(),old_inputs)
+                else:
+                    self.assertEqual(module.read_text(),model.render_host(payload['config']))
+
+    def test_firmware_only_save_skips_reload_if_desktop_already_applied(self):
+        home=Path(self.temp.name)/'home';hypr=home/'.config/hypr';hypr.mkdir(parents=True)
+        (hypr/'input.lua').write_text('require("hypr.skree-control")\n')
+        (hypr/'skree-control.lua').write_text(model.render_host(BASE_CONFIG))
+        (hypr/'keymaps').mkdir()
+        shutil.copyfile(self.root/model.KEYMAP_XKB,hypr/'keymaps/skree-swapped-slashes.xkb')
+        payload=self.payload();payload['applyDesktop']=True
+        with patch.object(model,'ROOT',self.root),patch.object(Path,'home',return_value=home),patch.object(self.workspace,'apply',side_effect=AssertionError('Unnecessary reload')):
+            result=self.workspace.save(payload)
+        self.assertTrue(result['state']['desktopApplied'])
+        self.assertIsNone(result['applyError'])
+
+    def test_invalid_apply_flag_is_rejected_before_commit(self):
+        payload=self.payload();payload['applyDesktop']='yes'
+        before=self.workspace.head()
+        with self.assertRaises(model.Invalid):self.workspace.save(payload)
+        self.assertEqual(before,self.workspace.head())
+        self.assertFalse(self.workspace.state()['dirty'])
+
     def test_failed_commit_restores_original_files_and_index(self):
         original={name:(self.root/name).read_bytes() for name in model.MANAGED}
         hook=self.root/'.git/hooks/pre-commit';hook.write_text('#!/bin/sh\nexit 1\n');hook.chmod(0o700)

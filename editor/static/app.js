@@ -11,7 +11,8 @@ const behaviors = {kp:"Type a key",mo:"Hold a layer",to:"Switch layer",tog:"Togg
 const mouseNames = {LCLK:"Left click",RCLK:"Right click",MCLK:"Middle click",MB4:"Back",MB5:"Forward"};
 const mouseShort = {LCLK:"L click",RCLK:"R click",MCLK:"M click",MB4:"Back",MB5:"Fwd"};
 const rgbNames = {RGB_TOG:"Toggle lighting",RGB_ON:"Lighting on",RGB_OFF:"Lighting off",RGB_EFF:"Next effect",RGB_EFR:"Previous effect",RGB_HUI:"Hue +",RGB_HUD:"Hue −",RGB_SAI:"Saturation +",RGB_SAD:"Saturation −",RGB_BRI:"Brightness +",RGB_BRD:"Brightness −",RGB_SPI:"Effect speed +",RGB_SPD:"Effect speed −"};
-const titles = {keyboard:["MAKE EVERY KEY COUNT","Keyboard layout","Select a key. Give it a job. Keep every change in Git."],trackball:["A LITTLE MORE CONTROL","Trackball settings","Tune your movement, scrolling, and mouse buttons."],desktop:["RIGHT HERE, ON THIS COMPUTER","Desktop profile","Apply your Skree preferences without flashing firmware."],changes:["A GOOD CHANGE STARTS WITH A DIFF","Review changes","Your draft stays local until you commit and push."],history:["NOTHING GOOD GETS LOST","Version history","Every saved configuration has a place in your Git history."]};
+const titles = {keyboard:["Keyboard","Select a key to change what it does."],trackball:["Trackball","Tune movement and scrolling. Save to apply on this computer."],history:["History","Your configuration, versioned in Git."]};
+const settingNames = {swapSlashes:"Slash / backslash swap",holdToScroll:"Hold to scroll",scrollButton:"Scroll button",middleClick:"Middle click",scrollFactor:"Scroll speed",naturalScroll:"Natural scrolling",sensitivity:"Sensitivity",accelProfile:"Acceleration",declaredCpi:"Desktop sensor resolution",cpi:"Firmware sensor resolution",autoMouseTimeoutMs:"Mouse-layer duration"};
 
 function toast(message, error=false) {
   const node=$("#toast");node.textContent=message;node.hidden=false;node.classList.toggle("error",error);
@@ -23,7 +24,7 @@ function persistDraft() { try { if(isDirty())localStorage.setItem(storageKey,JSO
 function localChanges() {
   if(!state)return [];
   const changes=[];
-  draft.firmware.layers.forEach((l,li)=>l.bindings.forEach((binding,i)=>{if(binding!==state.config.firmware.layers[li].bindings[i])changes.push({scope:"firmware",label:`${l.name} · key ${i+1}`,before:state.config.firmware.layers[li].bindings[i],after:binding});}));
+  draft.firmware.layers.forEach((l,li)=>{const old=state.config.firmware.layers[li];if(l.name!==old.name)changes.push({scope:"firmware",label:`Layer ${li} name`,before:old.name,after:l.name});l.bindings.forEach((binding,i)=>{if(binding!==old.bindings[i])changes.push({scope:"firmware",label:`${l.name} · key ${i+1}`,before:old.bindings[i],after:binding});});});
   [["firmware",state.config.firmware.trackball,draft.firmware.trackball],["desktop",state.config.hyprland,draft.hyprland]].forEach(([scope,before,after])=>Object.keys(after).forEach(k=>{if(after[k]!==before[k])changes.push({scope,label:k,before:before[k],after:after[k]});}));
   return changes;
 }
@@ -60,7 +61,7 @@ function locationFor(index) {
   return `${[52,53,54,56,57,58].includes(index)?"Left":"Right"} thumb cluster`;
 }
 function renderKeyboard() {
-  $("#layer-tabs").innerHTML=draft.firmware.layers.map((item,i)=>`<button type="button" class="layer-tab ${i===layer?"active":""}" role="tab" aria-selected="${i===layer}" aria-controls="keyboard-hands" data-layer="${i}"><span>0${i}</span>${escapeHTML(item.name)}</button>`).join("");
+  $("#layer-tabs").innerHTML=draft.firmware.layers.map((item,i)=>i===2&&!$("#show-all-layers").checked?"":`<button type="button" class="layer-tab ${i===layer?"active":""}" role="tab" aria-selected="${i===layer}" aria-controls="keyboard-hands" data-layer="${i}"><span>0${i}</span>${escapeHTML(item.name)}</button>`).join("");
   $("#keyboard-hands").innerHTML=[0,1].map(side=>{
     const outline=side===0?'M12 67 Q160 9 317 69 L324 251 Q316 279 294 283 L306 439 Q237 456 165 385 L20 276 Z':'M12 69 Q160 9 317 67 L312 276 L170 385 Q100 456 31 439 L44 283 Q17 279 10 251 Z';
     const keys=geometry.keys.filter(k=>k.side===side).map(k=>{
@@ -112,80 +113,96 @@ function assign(binding) {
   }
   draft.firmware.layers[layer].bindings[selected]=binding;changed();renderKeyboard();renderInspector();
 }
-function changed() { persistDraft();renderStatus();if(view==="changes")renderChanges(); }
+function changed() { persistDraft();renderStatus(); }
 function renderStatus() {
-  if(state.pendingPush && $("#connection-error").hidden) {
-    showError("This branch has local commits waiting to reach GitHub.");
-    const retry=document.createElement("button");retry.className="button secondary";retry.textContent="Retry push";retry.addEventListener("click",retryPush);$("#connection-error").append(document.createElement("br"),retry);
+  if(state.pendingPush && !$("#retry-push")) {
+    if($("#connection-error").hidden)showError("This branch has local commits waiting to reach GitHub.");
+    const retry=document.createElement("button");retry.id="retry-push";retry.className="button secondary";retry.textContent="Retry push";retry.addEventListener("click",retryPush);$("#connection-error").append(document.createElement("br"),retry);
   }
   const dirty=isDirty(),count=localChanges().length;
   $("#change-count").textContent=count;
+  $("#change-count").hidden=!count;
+  $("#discard").hidden=!dirty&&!staleDraft;
   $("#save-state").classList.toggle("unsaved",dirty);
-  $("#save-state").innerHTML=`<i></i>${dirty?`${count} unsaved change${count===1?"":"s"}`:state.dirty?"Checkout has file edits":state.pendingPush?"Local commits awaiting push":"All changes saved"}`;
+  $("#save-state").innerHTML=`<i></i>${dirty?`${count} unsaved change${count===1?"":"s"}`:state.dirty?"Checkout has file edits":state.pendingPush?"Local commits awaiting push":"Saved to GitHub"}`;
   $("#review").disabled=busy||!dirty||staleDraft||Boolean(state.sourceDrift?.length);
   $("#apply-desktop").disabled=busy||dirty||state.dirty||Boolean(state.sourceDrift?.length);
-  $("#apply-state").textContent=dirty?"Save your draft before applying desktop settings.":state.desktopApplied?"The saved desktop profile is applied and Hyprland validation passed.":"The saved profile is ready to apply to this computer.";
-  $("#apply-state").classList.toggle("applied",state.desktopApplied&&!dirty);
+  $("#apply-desktop").hidden=state.desktopApplied;
+  $("#apply-state").textContent=dirty?"Draft changes · desktop settings apply when you save.":state.desktopApplied?"Desktop settings applied · firmware edits require flashing.":"Saved desktop settings haven’t been applied yet.";
+  $(".profile-status").classList.toggle("pending",!state.desktopApplied||dirty);
   $("#repository-name").textContent=state.repository.replace("/"," / ");$("#repository-link").href=state.branchUrl||state.repositoryUrl;
   $("#branch-name").textContent=state.branch;$("#head-sha").textContent=state.head.slice(0,7);
 }
 function renderAccelerationHint() {
-  $("#accel-help").textContent=draft.hyprland.accelProfile==="flat"?`Flat mode applies a constant ${Math.max(0.005,1+Number(draft.hyprland.sensitivity)).toFixed(3)}× gain to raw counts. The DPI declaration does not compensate flat-mode cursor speed on this computer.`:"Adaptive acceleration gives slower fine movements and faster large movements. Its normalization uses the declared sensor CPI.";
+  $("#accel-help").textContent=draft.hyprland.accelProfile==="flat"?`Constant ${Math.max(0.005,1+Number(draft.hyprland.sensitivity)).toFixed(3)}× gain on raw movement. Changing the CPI declaration won’t adjust flat-mode speed.`:"Slow rolls for precision; faster rolls cover more ground.";
 }
 function renderSettings() {
   renderAccelerationHint();
   $$('[data-setting]').forEach(input=>{const value=draft.hyprland[input.dataset.setting];if(input.type==="checkbox")input.checked=value;else input.value=value;});
   $("#scroll-factor-value").textContent=Number(draft.hyprland.scrollFactor).toFixed(1)+"×";
   $("#sensitivity-value").textContent=Number(draft.hyprland.sensitivity).toFixed(2);
-  $("#dpi-state").textContent=state.dpiInstalled&&draft.hyprland.declaredCpi===state.config.hyprland.declaredCpi?"The saved DPI declaration is installed. Reconnect the keyboard after an installation.":"This DPI declaration needs a local system installation before it can take effect.";
+  $("#dpi-state").textContent=state.dpiInstalled&&draft.hyprland.declaredCpi===state.config.hyprland.declaredCpi?"Matches the installed desktop declaration.":"This DPI declaration needs a local system installation before it can take effect.";
   $("#sensor-cpi").value=draft.firmware.trackball.cpi;$("#mouse-timeout").value=draft.firmware.trackball.autoMouseTimeoutMs;
+}
+function changeValue(change,value) {
+  if(typeof value==="boolean")return value?"On":"Off";
+  if(typeof value==="string"&&value.startsWith("&"))return labelFor(value);
+  if(change.label==="scrollFactor")return Number(value).toFixed(1)+"×";
+  if(change.label==="sensitivity")return Number(value).toFixed(2);
+  if(["cpi","declaredCpi"].includes(change.label))return value?`${value} CPI`:"System default";
+  if(change.label==="autoMouseTimeoutMs")return `${value} ms`;
+  return ({"left-right-chord":"Left + right together",off:"Off",left:"Left click",right:"Right click",middle:"Middle click",adaptive:"Adaptive",flat:"Flat"})[value]||String(value);
 }
 function renderChangeRows(changes) {
   if(!changes.length)return '<div class="empty-state"><strong>Everything is in sync.</strong>Choose a key or adjust a setting to start a draft.</div>';
-  return changes.map(c=>`<div class="change-row"><div>${escapeHTML(c.label)}<small>${c.scope==="firmware"?"Firmware · requires flash":"Desktop · apply in Hyprland"}</small></div><code>${escapeHTML(c.before)}</code><span>→</span><code>${escapeHTML(c.after)}</code></div>`).join("");
+  return changes.map(c=>`<div class="change-row"><div>${escapeHTML(settingNames[c.label]||c.label)}<small>${c.label==="declaredCpi"?"System · separate installation":c.scope==="firmware"?"Keyboard · requires flash":"Desktop · applies when saved"}</small></div><code>${escapeHTML(changeValue(c,c.before))}</code><span>→</span><code>${escapeHTML(changeValue(c,c.after))}</code></div>`).join("");
 }
 function renderDiffs(files) {return files.map(file=>`<details class="diff-file"><summary>${escapeHTML(file.path)}</summary><pre>${escapeHTML(file.diff)}</pre></details>`).join("");}
-async function renderChanges() {
-  $("#changes-list").innerHTML=renderChangeRows(localChanges());
-  $("#changes-diffs").innerHTML="";
-  if(!isDirty())return;
-  try {const result=await api("/api/preview",{config:draft});if(view==="changes")$("#changes-diffs").innerHTML=renderDiffs(result.files);} catch(error){toast(error.message,true);}
-}
 function renderHistory() {
   $("#history-list").innerHTML=state.history.length?state.history.map(item=>`<article class="history-row"><h3>${escapeHTML(item.message)}</h3><div class="history-meta"><a href="${escapeHTML(item.url)}" target="_blank" rel="noreferrer">${item.sha.slice(0,7)}</a><time>${escapeHTML(new Date(item.date).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"}))}</time></div><div class="history-actions"><button class="text-button" data-restore="${item.sha}">Restore as draft ↶</button><a class="text-button" href="${escapeHTML(item.url)}" target="_blank" rel="noreferrer">View commit ↗</a></div></article>`).join(""):'<div class="empty-state"><strong>Your history starts here.</strong>The first configuration commit will appear after repository setup.</div>';
-  $$('[data-restore]').forEach(button=>button.addEventListener("click",async()=>{if(isDirty()&&!confirm("Replace your current draft with this saved version?"))return;try{const result=await api("/api/restore",{sha:button.dataset.restore});draft=result.config;draftRevision=state.revision;staleDraft=false;showError("");changed();renderAll();switchView("changes");toast("Earlier configuration loaded as a draft. Review and save to create a new commit.");}catch(error){toast(error.message,true);}}));
+  $$('[data-restore]').forEach(button=>button.addEventListener("click",async()=>{if(isDirty()&&!confirm("Replace your current draft with this saved version?"))return;try{const result=await api("/api/restore",{sha:button.dataset.restore});draft=result.config;draftRevision=state.revision;staleDraft=false;showError("");changed();renderAll();switchView("keyboard");await review();toast("Previous version loaded for review. Nothing has been saved yet.");}catch(error){toast(error.message,true);}}));
 }
-function renderAll(){renderStatus();renderKeyboard();renderInspector();renderSettings();renderHistory();if(view==="changes")renderChanges();}
+function renderAll(){renderStatus();renderKeyboard();renderInspector();renderSettings();renderHistory();}
 function switchView(next) {
   view=next;recording=false;
   $$(".view").forEach(node=>node.hidden=node.id!==`view-${next}`);
   $$(".nav-item").forEach(button=>button.classList.toggle("active",button.dataset.view===next));
-  $("#breadcrumb-current").textContent=next.toUpperCase();
-  const [eyebrow,title,description]=titles[next];$("#page-eyebrow").textContent=eyebrow;$("#page-title").innerHTML=escapeHTML(title)+'<span class="title-dot">.</span>';$("#page-description").textContent=description;
-  if(next==="changes")renderChanges();
+  $("#breadcrumb-current").textContent=next==="keyboard"?"KEYBOARD":next.toUpperCase();
+  const [title,description]=titles[next];$("#page-title").textContent=title;$("#page-description").textContent=description;
   if(next==="keyboard")renderInspector();
 }
 async function review() {
   $("#review").disabled=true;
   try {
     const result=await api("/api/preview",{config:draft});
-    $("#review-content").innerHTML=renderChangeRows(result.changes)+(result.firmwareRequiresFlash?'<div class="review-info">Firmware changes are versioned here. Build and flash both matching halves separately to use them on the keyboard.</div>':'<div class="review-info">These are desktop-only changes. After saving, apply the profile on the Desktop page.</div>')+renderDiffs(result.files);
+    const firmware=result.firmwareRequiresFlash;
+    const dpi=draft.hyprland.declaredCpi!==state.config.hyprland.declaredCpi;
+    $("#review-content").innerHTML=renderChangeRows(result.changes)+'<div class="review-info">Save creates a Git commit, pushes to GitHub, and applies your desktop settings.'+(firmware?' Keyboard changes still need a firmware build and flash.':'')+(dpi?' The DPI declaration needs a separate system installation.':'')+'</div>';
+    $("#review-diffs").innerHTML=renderDiffs(result.files);
+    $(".review-details").open=false;
     const changes=result.changes;
-    $("#commit-message").value=changes.length===1?`Update ${changes[0].label}`:changes.some(c=>c.scope==="firmware")?"Update Skree keymap and preferences":"Tune Skree desktop and trackball settings";
+    $("#commit-message").value=changes.length===1?`Update ${settingNames[changes[0].label]||changes[0].label}`:changes.some(c=>c.scope==="firmware")?"Update Skree keymap and preferences":"Tune Skree desktop and trackball settings";
     $("#commit-destination").textContent=state.branch;$("#save-error").hidden=true;$("#review-dialog").showModal();
   }catch(error){toast(error.message,true);}finally{renderStatus();}
 }
 async function saveGitHub() {
-  if(busy)return;busy=true;$("#save-github").disabled=true;$("#save-github").textContent="Saving to GitHub…";
+  if(busy)return;busy=true;$("#save-github").disabled=true;$("#save-github").textContent="Saving & applying…";
   try {
-    const result=await api("/api/save",{config:draft,message:$("#commit-message").value});state=result.state;draft=copy(state.config);draftRevision=state.revision;staleDraft=false;persistDraft();renderAll();$("#review-dialog").close();
-    if(result.pushed){showError("");toast(`Saved to GitHub · ${result.commit.slice(0,7)}`);}else{showError(`Commit saved locally, but GitHub push failed: ${result.pushError} Your commit is retained. Use Retry push below.`);const retry=document.createElement("button");retry.className="button secondary";retry.textContent="Retry push";retry.addEventListener("click",retryPush);$("#connection-error").append(document.createElement("br"),retry);toast("Local commit saved; GitHub push needs attention.",true);}
+    const result=await api("/api/save",{config:draft,message:$("#commit-message").value,applyDesktop:true});state=result.state;draft=copy(state.config);draftRevision=state.revision;staleDraft=false;persistDraft();renderAll();$("#review-dialog").close();
+    showError("");
+    const problems=[];
+    if(!result.pushed)problems.push(`Saved locally; GitHub push failed: ${result.pushError}. Your commit is retained.`);
+    if(result.applyError)problems.push(`Saved, but desktop apply failed: ${result.applyError}. Previous desktop settings were restored. Use Apply saved settings to retry.`);
+    if(problems.length){showError(problems.join(" "));toast("Saved; an update needs attention.",true);}
+    else toast(`Saved to GitHub · desktop settings applied · ${result.commit.slice(0,7)}`);
+    renderStatus();
+
   }catch(error){$("#save-error").hidden=false;$("#save-error").textContent=error.message;persistDraft();}
-  finally{busy=false;$("#save-github").disabled=false;$("#save-github").innerHTML='Commit &amp; push to GitHub <span>↗</span>';renderStatus();}
+  finally{busy=false;$("#save-github").disabled=false;$("#save-github").innerHTML='Save &amp; apply <span>↗</span>';renderStatus();}
 }
 async function retryPush(){try{const result=await api("/api/push",{});state=result.state;showError("");renderStatus();renderHistory();toast("Local commits pushed to GitHub.");}catch(error){toast(error.message,true);}}
 async function refreshGitHub(){if(busy)return;if(isDirty()&&!confirm("Discard the current browser draft and refresh from GitHub?"))return;busy=true;$("#refresh").disabled=true;try{const result=await api("/api/refresh",{});state=result.state;draft=copy(state.config);draftRevision=state.revision;staleDraft=false;persistDraft();showError("");renderAll();toast("Repository refreshed from GitHub.");}catch(error){toast(error.message,true);}finally{busy=false;$("#refresh").disabled=false;renderStatus();}}
-async function applyDesktop(){if(busy||isDirty())return;busy=true;$("#apply-desktop").textContent="Applying & validating…";renderStatus();try{const result=await api("/api/apply",{});state=result.state;renderStatus();toast(result.message);}catch(error){toast(error.message,true);}finally{busy=false;$("#apply-desktop").innerHTML='Apply saved desktop profile <span>↗</span>';renderStatus();}}
+async function applyDesktop(){if(busy||isDirty())return;busy=true;$("#apply-desktop").textContent="Applying & validating…";renderStatus();try{const result=await api("/api/apply",{});state=result.state;renderStatus();toast(result.message);}catch(error){toast(error.message,true);}finally{busy=false;$("#apply-desktop").innerHTML='Apply saved settings';renderStatus();}}
 
 async function start() {
   try {
@@ -199,13 +216,15 @@ async function start() {
     renderAll();
   }catch(error){showError("Could not load the local repository. "+error.message);$("#save-state").textContent="Connection unavailable";$("#review").disabled=true;return;}
   $$(".nav-item").forEach(button=>button.addEventListener("click",()=>switchView(button.dataset.view)));
+  $("#show-all-layers").addEventListener("change",()=>{if(layer===2&&!$("#show-all-layers").checked)layer=0;renderKeyboard();renderInspector();});
   $("#behavior").addEventListener("change",event=>{const kind=event.target.value;assign({kp:"&kp A",mo:"&mo 1",to:"&to 0",tog:"&tog 1",mkp:"&mkp MCLK",trans:"&trans",none:"&none",bt:"&bt BT_NXT",rgb_ug:"&rgb_ug RGB_TOG",bootloader:"&bootloader",sys_reset:"&sys_reset"}[kind]);});
   $("#reset-key").addEventListener("click",()=>assign(state.config.firmware.layers[layer].bindings[selected]));
-  $$("[data-setting]").forEach(input=>input.addEventListener(input.type==="range"?"input":"change",()=>{draft.hyprland[input.dataset.setting]=input.type==="checkbox"?input.checked:input.type==="range"||input.dataset.setting==="declaredCpi"?Number(input.value):input.value;changed();if(input.dataset.setting==="accelProfile"||input.dataset.setting==="sensitivity")renderAccelerationHint();if(input.dataset.setting==="scrollFactor")$("#scroll-factor-value").textContent=Number(input.value).toFixed(1)+"×";if(input.dataset.setting==="sensitivity")$("#sensitivity-value").textContent=Number(input.value).toFixed(2);}));
+  $$("[data-setting]").forEach(input=>input.addEventListener(input.type==="range"?"input":"change",()=>{draft.hyprland[input.dataset.setting]=input.type==="checkbox"?input.checked:input.type==="range"||input.dataset.setting==="declaredCpi"?Number(input.value):input.value;changed();if(input.dataset.setting==="declaredCpi")renderSettings();if(input.dataset.setting==="accelProfile"||input.dataset.setting==="sensitivity")renderAccelerationHint();if(input.dataset.setting==="scrollFactor")$("#scroll-factor-value").textContent=Number(input.value).toFixed(1)+"×";if(input.dataset.setting==="sensitivity")$("#sensitivity-value").textContent=Number(input.value).toFixed(2);}));
   $("#sensor-cpi").addEventListener("change",event=>{draft.firmware.trackball.cpi=Number(event.target.value);changed();});
   $("#mouse-timeout").addEventListener("change",event=>{const value=Number(event.target.value);if(!Number.isInteger(value)||value<100||value>5000){toast("Choose a duration from 100 to 5000 ms.",true);renderSettings();return;}draft.firmware.trackball.autoMouseTimeoutMs=value;changed();});
   $("#open-mouse-layer").addEventListener("click",()=>{layer=3;selected=54;renderKeyboard();renderInspector();switchView("keyboard");});
   $("#review").addEventListener("click",review);$("#save-github").addEventListener("click",saveGitHub);$("#refresh").addEventListener("click",refreshGitHub);$("#apply-desktop").addEventListener("click",applyDesktop);
+  $("#review-dialog").addEventListener("cancel",event=>{if(busy)event.preventDefault();});
   $$(".close-dialog").forEach(button=>button.addEventListener("click",()=>{if(!busy)$("#review-dialog").close();}));
   $("#discard").addEventListener("click",()=>{if((isDirty()||staleDraft)&&confirm("Discard all unsaved changes in this draft?")){draft=copy(state.config);draftRevision=state.revision;staleDraft=false;showError("");persistDraft();renderAll();toast("Draft discarded. Saved configuration restored.");}});
   $("#export-config").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(draft,null,2)+"\n"],{type:"application/json"});const url=URL.createObjectURL(blob);const link=document.createElement("a");link.href=url;link.download="skree-config.json";link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});

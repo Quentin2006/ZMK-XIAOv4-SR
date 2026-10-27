@@ -36,7 +36,7 @@ def atomic_write(path, content):
 class Workspace:
     def __init__(self, root=model.ROOT):
         self.root = Path(root)
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.csrf = secrets.token_urlsafe(32)
 
     def git(self, *args, timeout=30):
@@ -93,6 +93,7 @@ class Workspace:
             self.assert_revision(payload.get("revision"))
             model.require(not self.git("status", "--porcelain"), "The checkout has other uncommitted edits. Commit or review them outside the editor before saving.")
             model.require(not self.state()["sourceDrift"], "Generated sources differ from editor/config.json. Reconcile them before saving; manual edits will not be overwritten.")
+            model.require(type(payload.get("applyDesktop", False)) is bool, "applyDesktop must be a boolean.")
             config = model.validate(copy.deepcopy(payload.get("config")))
             message = payload.get("message", "")
             model.require(isinstance(message, str) and 3 <= len(message.strip()) <= 180 and not re.search(r"[\x00-\x1f]", message), "Write a commit message of 3–180 printable characters.")
@@ -121,7 +122,15 @@ class Workspace:
                 pushed, error = True, None
             except (model.Invalid, subprocess.TimeoutExpired) as exc:
                 pushed, error = False, str(exc)
-            return {"state": self.state(), "commit": committed, "url": REPO_URL + "/commit/" + committed, "pushed": pushed, "pushError": error}
+            # Saving and applying are one UI action. A failed apply retains the commit,
+            # and apply() restores the previous working desktop profile.
+            apply_error = None
+            if payload.get("applyDesktop") and not self.state()["desktopApplied"]:
+                try:
+                    self.apply({"revision": self.revision()})
+                except Exception as exc:
+                    apply_error = str(exc)
+            return {"state": self.state(), "commit": committed, "url": REPO_URL + "/commit/" + committed, "pushed": pushed, "pushError": error, "applyError": apply_error}
 
     def push(self, payload):
         with self.lock:
