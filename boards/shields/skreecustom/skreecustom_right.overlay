@@ -16,7 +16,7 @@
         reg = <0>;
         spi-max-frequency = <2000000>;
         irq-gpios = <&gpio0 29 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-        cpi = <600>;            // 200-3200 in steps of 200; raise for a faster pointer
+        cpi = <3200>;            // 200-3200 in steps of 200; raise for a faster pointer
         // Orientation is done in the sensor hardware (same result as the old
         // PMW3610_SWAP_XY + listener X/Y invert). Remove a line to flip that axis.
         swap-xy;

@@ -281,7 +281,7 @@
       }
     ],
     "trackball": {
-      "cpi": 600,
+      "cpi": 3200,
       "autoMouseLayer": 3,
       "autoMouseTimeoutMs": 500
     }
