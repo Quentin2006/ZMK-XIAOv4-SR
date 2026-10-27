@@ -129,7 +129,11 @@ function renderStatus() {
   $("#repository-name").textContent=state.repository.replace("/"," / ");$("#repository-link").href=state.branchUrl||state.repositoryUrl;
   $("#branch-name").textContent=state.branch;$("#head-sha").textContent=state.head.slice(0,7);
 }
+function renderAccelerationHint() {
+  $("#accel-help").textContent=draft.hyprland.accelProfile==="flat"?`Flat mode applies a constant ${Math.max(0.005,1+Number(draft.hyprland.sensitivity)).toFixed(3)}× gain to raw counts. The DPI declaration does not compensate flat-mode cursor speed on this computer.`:"Adaptive acceleration gives slower fine movements and faster large movements. Its normalization uses the declared sensor CPI.";
+}
 function renderSettings() {
+  renderAccelerationHint();
   $$('[data-setting]').forEach(input=>{const value=draft.hyprland[input.dataset.setting];if(input.type==="checkbox")input.checked=value;else input.value=value;});
   $("#scroll-factor-value").textContent=Number(draft.hyprland.scrollFactor).toFixed(1)+"×";
   $("#sensitivity-value").textContent=Number(draft.hyprland.sensitivity).toFixed(2);
@@ -197,7 +201,7 @@ async function start() {
   $$(".nav-item").forEach(button=>button.addEventListener("click",()=>switchView(button.dataset.view)));
   $("#behavior").addEventListener("change",event=>{const kind=event.target.value;assign({kp:"&kp A",mo:"&mo 1",to:"&to 0",tog:"&tog 1",mkp:"&mkp MCLK",trans:"&trans",none:"&none",bt:"&bt BT_NXT",rgb_ug:"&rgb_ug RGB_TOG",bootloader:"&bootloader",sys_reset:"&sys_reset"}[kind]);});
   $("#reset-key").addEventListener("click",()=>assign(state.config.firmware.layers[layer].bindings[selected]));
-  $$("[data-setting]").forEach(input=>input.addEventListener(input.type==="range"?"input":"change",()=>{draft.hyprland[input.dataset.setting]=input.type==="checkbox"?input.checked:input.type==="range"||input.dataset.setting==="declaredCpi"?Number(input.value):input.value;changed();if(input.dataset.setting==="scrollFactor")$("#scroll-factor-value").textContent=Number(input.value).toFixed(1)+"×";if(input.dataset.setting==="sensitivity")$("#sensitivity-value").textContent=Number(input.value).toFixed(2);}));
+  $$("[data-setting]").forEach(input=>input.addEventListener(input.type==="range"?"input":"change",()=>{draft.hyprland[input.dataset.setting]=input.type==="checkbox"?input.checked:input.type==="range"||input.dataset.setting==="declaredCpi"?Number(input.value):input.value;changed();if(input.dataset.setting==="accelProfile"||input.dataset.setting==="sensitivity")renderAccelerationHint();if(input.dataset.setting==="scrollFactor")$("#scroll-factor-value").textContent=Number(input.value).toFixed(1)+"×";if(input.dataset.setting==="sensitivity")$("#sensitivity-value").textContent=Number(input.value).toFixed(2);}));
   $("#sensor-cpi").addEventListener("change",event=>{draft.firmware.trackball.cpi=Number(event.target.value);changed();});
   $("#mouse-timeout").addEventListener("change",event=>{const value=Number(event.target.value);if(!Number.isInteger(value)||value<100||value>5000){toast("Choose a duration from 100 to 5000 ms.",true);renderSettings();return;}draft.firmware.trackball.autoMouseTimeoutMs=value;changed();});
   $("#open-mouse-layer").addEventListener("click",()=>{layer=3;selected=54;renderKeyboard();renderInspector();switchView("keyboard");});

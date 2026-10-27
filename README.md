@@ -41,7 +41,9 @@ The editor intentionally uses a separate branch. Merge its pull request when rea
 | Slash/backslash swap, hold-button scrolling, middle-button emulation, scroll speed/direction, pointer sensitivity | On this computer after saving and applying the Desktop profile |
 | Key bindings, layers, sensor CPI, automatic mouse-layer timeout | On the keyboard after building and flashing matching firmware |
 
-The trackball now uses **3200 CPI**, a matching **3200-DPI desktop declaration**, and **flat acceleration**. Flat sensitivity `-0.4` selects a constant gain of 0.6 in the installed libinput 1.32.0; after DPI normalization that gives roughly 600 pointer units per inch of ball-surface movement. It is a starting point to tune by feel.
+The trackball now uses **3200 CPI**, a matching **3200-DPI desktop declaration**, and **adaptive acceleration at sensitivity -0.4**. This provides slower fine movements and faster large movements. It is a starting point to tune by feel.
+
+On the installed libinput 1.32.0, flat mode applies a constant gain directly to raw counts: `max(0.005, 1 + sensitivity)`. The DPI declaration does not compensate flat-mode pointer speed. For example, flat sensitivity -0.4 at 3200 CPI produces nominally 1920 pointer units per inch, not 600. A motion capture measured that 0.6 cursor-to-raw gain. Adaptive mode uses DPI normalization and a speed-dependent curve.
 
 The panel's **Declared sensor CPI** is separate from the firmware setting: it must describe the firmware actually flashed, not a pending build. Historical configurations migrate to adaptive acceleration with no DPI override.
 
