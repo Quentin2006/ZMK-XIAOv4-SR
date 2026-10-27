@@ -45,9 +45,27 @@ The baseline desktop profile retains the existing slash swap and right-button ho
 
 Desktop apply backs up `input.lua`, the managed module, and the XKB map in ignored `.local-state/desktop-backups/`. It migrates the two prior Skree blocks to `require("hypr.skree-control")`, preserves other settings, compiles the XKB map, reloads Hyprland, and checks configuration errors. Failure restores the previous files and reloads them. No firmware is flashed by the site.
 
+## Current keyboard profile
+
+Use **Base**, one held **Fn** layer, and the automatic **Mouse** layer. The right thumb key previously labeled L2 now sends standard Alt (`&kp LALT`), matching the existing left-side Alt. Hold the left L1 thumb key for Fn.
+
+| Hold Fn and press | Result |
+| --- | --- |
+| 1 through 0 | F1 through F10 |
+| Minus / Equals | F11 / F12 |
+| H / J / K / L | Left / Down / Up / Right |
+| Physical Left / Right arrows | Home / End |
+| Physical Up / Down arrows | Page Up / Page Down |
+| N / M | Play or pause / Mute |
+| Comma / Period | Volume down / Volume up |
+
+Other Fn positions pass through to Base. Fn+Esc sends ordinary Escape. The automatic Mouse layer retains its vendor click assignments and 500 ms timeout. The unused logical Layer 2 slot retains the old system bindings for reference, but no physical key activates it. Keeping that slot preserves the established Mouse layer number 3.
+
+These profile changes are saved firmware source. Build and flash both matching halves to activate them on the keyboard.
+
 ## Hardware and source of truth
 
-The original repository configured a different, 60-key shift-register board. This branch imports the correct vendor profile from [WainingForests/ZMK-XIAOv4-Std](https://github.com/WainingForests/ZMK-XIAOv4-Std/tree/NS-5x6%2B6%2B4-%2862%29%2BTBx1), branch `NS-5x6+6+4-(62)+TBx1`, commit `487828c994aea35e24bdb38051a0ac7a4ef64c04`. Both physical halves were previously flashed and read back against that vendor build. The current keymap retains those bindings.
+The original repository configured a different, 60-key shift-register board. This branch imports the correct vendor profile from [WainingForests/ZMK-XIAOv4-Std](https://github.com/WainingForests/ZMK-XIAOv4-Std/tree/NS-5x6%2B6%2B4-%2862%29%2BTBx1), branch `NS-5x6+6+4-(62)+TBx1`, commit `487828c994aea35e24bdb38051a0ac7a4ef64c04`. Both physical halves were previously flashed and read back against that vendor build. The current profile customizes its Fn layer and right Alt thumb key as documented above.
 
 `editor/config.json` records the configuration. The generator updates only:
 
