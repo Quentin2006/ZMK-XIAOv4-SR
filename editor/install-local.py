@@ -30,7 +30,7 @@ def main():
     service = Path.home() / '.config/systemd/user/skree-control.service'
     service.parent.mkdir(parents=True, exist_ok=True)
     # Keep the compositor connection available for the explicit Apply action.
-    variables = [name for name in ['HYPRLAND_INSTANCE_SIGNATURE', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS'] if name in os.environ]
+    variables = [name for name in ['HYPRLAND_INSTANCE_SIGNATURE', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'SSH_AUTH_SOCK'] if name in os.environ]
     if variables:
         run('systemctl', '--user', 'import-environment', *variables)
     body = '\n'.join([
