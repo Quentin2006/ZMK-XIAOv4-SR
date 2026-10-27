@@ -133,6 +133,7 @@ function renderSettings() {
   $$('[data-setting]').forEach(input=>{const value=draft.hyprland[input.dataset.setting];if(input.type==="checkbox")input.checked=value;else input.value=value;});
   $("#scroll-factor-value").textContent=Number(draft.hyprland.scrollFactor).toFixed(1)+"×";
   $("#sensitivity-value").textContent=Number(draft.hyprland.sensitivity).toFixed(2);
+  $("#dpi-state").textContent=state.dpiInstalled&&draft.hyprland.declaredCpi===state.config.hyprland.declaredCpi?"The saved DPI declaration is installed. Reconnect the keyboard after an installation.":"This DPI declaration needs a local system installation before it can take effect.";
   $("#sensor-cpi").value=draft.firmware.trackball.cpi;$("#mouse-timeout").value=draft.firmware.trackball.autoMouseTimeoutMs;
 }
 function renderChangeRows(changes) {
@@ -188,6 +189,7 @@ async function start() {
     [state,geometry,catalog]=values;draft=copy(state.config);draftRevision=state.revision;
     try {const saved=JSON.parse(localStorage.getItem(storageKey));if(saved?.revision===state.revision&&saved.config){draft=saved.config;toast("Your unsaved browser draft was restored.");}else if(saved?.config){staleDraft=true;draftRevision=saved.revision;showError("A draft from an older repository revision is still in browser storage. Export it before starting over, or discard it to use the current repository.");draft=saved.config;}}catch{}
     $("#keycode-list").innerHTML=catalog.keycodes.map(code=>`<option value="${code}">${escapeHTML(symbols[code]||code)}</option>`).join("");
+    $("#declared-cpi").innerHTML='<option value="0">System default · no override</option>'+Array.from({length:16},(_,i)=>`<option value="${(i+1)*200}">${(i+1)*200} CPI</option>`).join("");
     $("#sensor-cpi").innerHTML=Array.from({length:16},(_,i)=>`<option value="${(i+1)*200}">${(i+1)*200} CPI</option>`).join("");
     if(state.sourceDrift?.length)showError("Generated files differ from the saved profile: "+state.sourceDrift.join(", ")+". Reconcile those edits before saving; they will not be overwritten.");
     renderAll();
@@ -195,7 +197,7 @@ async function start() {
   $$(".nav-item").forEach(button=>button.addEventListener("click",()=>switchView(button.dataset.view)));
   $("#behavior").addEventListener("change",event=>{const kind=event.target.value;assign({kp:"&kp A",mo:"&mo 1",to:"&to 0",tog:"&tog 1",mkp:"&mkp MCLK",trans:"&trans",none:"&none",bt:"&bt BT_NXT",rgb_ug:"&rgb_ug RGB_TOG",bootloader:"&bootloader",sys_reset:"&sys_reset"}[kind]);});
   $("#reset-key").addEventListener("click",()=>assign(state.config.firmware.layers[layer].bindings[selected]));
-  $$("[data-setting]").forEach(input=>input.addEventListener(input.type==="range"?"input":"change",()=>{draft.hyprland[input.dataset.setting]=input.type==="checkbox"?input.checked:input.type==="range"?Number(input.value):input.value;changed();if(input.dataset.setting==="scrollFactor")$("#scroll-factor-value").textContent=Number(input.value).toFixed(1)+"×";if(input.dataset.setting==="sensitivity")$("#sensitivity-value").textContent=Number(input.value).toFixed(2);}));
+  $$("[data-setting]").forEach(input=>input.addEventListener(input.type==="range"?"input":"change",()=>{draft.hyprland[input.dataset.setting]=input.type==="checkbox"?input.checked:input.type==="range"||input.dataset.setting==="declaredCpi"?Number(input.value):input.value;changed();if(input.dataset.setting==="scrollFactor")$("#scroll-factor-value").textContent=Number(input.value).toFixed(1)+"×";if(input.dataset.setting==="sensitivity")$("#sensitivity-value").textContent=Number(input.value).toFixed(2);}));
   $("#sensor-cpi").addEventListener("change",event=>{draft.firmware.trackball.cpi=Number(event.target.value);changed();});
   $("#mouse-timeout").addEventListener("change",event=>{const value=Number(event.target.value);if(!Number.isInteger(value)||value<100||value>5000){toast("Choose a duration from 100 to 5000 ms.",true);renderSettings();return;}draft.firmware.trackball.autoMouseTimeoutMs=value;changed();});
   $("#open-mouse-layer").addEventListener("click",()=>{layer=3;selected=54;renderKeyboard();renderInspector();switchView("keyboard");});

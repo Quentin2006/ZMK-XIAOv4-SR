@@ -41,6 +41,19 @@ The editor intentionally uses a separate branch. Merge its pull request when rea
 | Slash/backslash swap, hold-button scrolling, middle-button emulation, scroll speed/direction, pointer sensitivity | On this computer after saving and applying the Desktop profile |
 | Key bindings, layers, sensor CPI, automatic mouse-layer timeout | On the keyboard after building and flashing matching firmware |
 
+The trackball now uses **3200 CPI**, a matching **3200-DPI desktop declaration**, and **flat acceleration**. Flat sensitivity `-0.4` selects a constant gain of 0.6 in the installed libinput 1.32.0; after DPI normalization that gives roughly 600 pointer units per inch of ball-surface movement. It is a starting point to tune by feel.
+
+The panel's **Declared sensor CPI** is separate from the firmware setting: it must describe the firmware actually flashed, not a pending build. Historical configurations migrate to adaptive acceleration with no DPI override.
+
+The generated, narrowly matched system declaration is stored in `desktop/linux/99-skree-control.hwdb`. After changing Declared sensor CPI and saving, install it locally:
+
+```sh
+python3 editor/install-dpi.py --dry-run
+pkexec /usr/bin/python3 "$PWD/editor/install-dpi.py"
+```
+
+This backs up any previous managed declaration, rebuilds the system hardware database, and updates only Skree input nodes. Reconnect the keyboard afterwards so libinput reads the new resolution. The web server never invokes the privileged installer. Desktop Apply separately applies acceleration and sensitivity through the user-owned Hyprland module. Other mice do not match these DPI rules.
+
 The baseline desktop profile retains the existing slash swap and right-button hold-to-scroll. Left+right mouse-button emulation is optional. **Right-click + Backspace is not implemented as a desktop chord.** To assign a dedicated middle-click key in firmware, choose a key on the Mouse layer and set Mouse button → Middle click. This changes that key whenever the Mouse layer is active.
 
 Desktop apply backs up `input.lua`, the managed module, and the XKB map in ignored `.local-state/desktop-backups/`. It migrates the two prior Skree blocks to `require("hypr.skree-control")`, preserves other settings, compiles the XKB map, reloads Hyprland, and checks configuration errors. Failure restores the previous files and reloads them. No firmware is flashed by the site.
@@ -73,6 +86,7 @@ The original repository configured a different, 60-key shift-register board. Thi
 - the automatic mouse-layer timeout in `boards/shields/skreecustom/skreecustom.dtsi`;
 - the sensor CPI in `boards/shields/skreecustom/skreecustom_right.overlay`;
 - `desktop/hyprland/skree-control.lua`.
+- `desktop/linux/99-skree-control.hwdb` (install separately after changing the declared CPI).
 
 The full slash-swap XKB map is stored in `desktop/hyprland/skree-swapped-slashes.xkb`. Matrix IDs in `editor/static/geometry.json` follow the electrical transform, including the asymmetric 32-key left / 30-key right halves. Key positions are schematic. The known non-responsive slash position remains a separate hardware/mapping investigation; this editor does not repair an electrical fault.
 

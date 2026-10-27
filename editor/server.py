@@ -82,8 +82,10 @@ class Workspace:
             inputs = Path.home() / ".config/hypr/input.lua"
             xkb = Path.home() / ".config/hypr/keymaps/skree-swapped-slashes.xkb"
             applied = module.exists() and module.read_text() == model.render_host(config) and inputs.exists() and 'require("hypr.skree-control")' in inputs.read_text() and xkb.exists() and xkb.read_bytes() == (self.root / model.KEYMAP_XKB).read_bytes()
+        dpi_file = Path("/etc/udev/hwdb.d/99-skree-control.hwdb")
+        dpi_installed = dpi_file.exists() and dpi_file.read_text() == model.render_hwdb(config)
         pending = self.pending_commits()
-        return {"config": config, "revision": self.revision(), "head": self.head(), "branch": self.git("branch", "--show-current"), "repository": REPOSITORY, "repositoryUrl": REPO_URL, "branchUrl": REPO_URL + "/tree/" + BRANCH, "dirty": bool(status), "sourceDrift": drift, "status": status, "history": self.history(), "desktopApplied": applied, "pendingCommits": pending, "pendingPush": pending is None or pending > 0, "csrfToken": self.csrf}
+        return {"config": config, "revision": self.revision(), "head": self.head(), "branch": self.git("branch", "--show-current"), "repository": REPOSITORY, "repositoryUrl": REPO_URL, "branchUrl": REPO_URL + "/tree/" + BRANCH, "dirty": bool(status), "sourceDrift": drift, "status": status, "history": self.history(), "desktopApplied": applied, "dpiInstalled": dpi_installed, "pendingCommits": pending, "pendingPush": pending is None or pending > 0, "csrfToken": self.csrf}
 
     def save(self, payload):
         with self.lock:

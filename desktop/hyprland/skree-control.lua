@@ -4,7 +4,7 @@ local keymap = os.getenv("HOME") .. "/.config/hypr/keymaps/skree-swapped-slashes
 for _, name in ipairs({ "skree-custom-keyboard", "zmk-project-skree-custom-keyboard" }) do
   hl.device({ name = name, kb_file = keymap })
 end
-for _, name in ipairs({ "skree-custom-mouse", "zmk-project-skree-custom-mouse" }) do
+for _, name in ipairs({ "skree-custom-mouse", "zmk-project-skree-custom-mouse", "zmk-project-skree-custom", "zmk-project-skree-custom-keyboard" }) do
   hl.device({
     name = name,
     middle_button_emulation = true,
@@ -13,6 +13,7 @@ for _, name in ipairs({ "skree-custom-mouse", "zmk-project-skree-custom-mouse" }
     scroll_button_lock = false,
     scroll_factor = 1.0,
     natural_scroll = false,
-    sensitivity = -1.0,
+    sensitivity = -0.4,
+    accel_profile = "flat",
   })
 end

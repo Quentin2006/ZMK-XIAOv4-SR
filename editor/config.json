@@ -293,6 +293,8 @@
     "middleClick": "left-right-chord",
     "scrollFactor": 1.0,
     "naturalScroll": false,
-    "sensitivity": -1.0
+    "sensitivity": -0.4,
+    "accelProfile": "flat",
+    "declaredCpi": 3200
   }
 }

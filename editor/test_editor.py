@@ -65,10 +65,41 @@ class ModelTests(unittest.TestCase):
             with self.assertRaises(model.Invalid): model.render_keymap(source, BASE_CONFIG["firmware"]["layers"])
 
     def test_json_integer_normalization_does_not_change_desktop_source(self):
-        config=copy.deepcopy(BASE_CONFIG)
+        reference=copy.deepcopy(BASE_CONFIG)
+        reference['hyprland'].update(scrollFactor=1.0,sensitivity=0.0)
+        config=copy.deepcopy(reference)
         config['hyprland']['scrollFactor']=1
         config['hyprland']['sensitivity']=0
-        self.assertEqual(model.generated(config)[model.HOST], model.generated(BASE_CONFIG)[model.HOST])
+        self.assertEqual(model.generated(config)[model.HOST], model.generated(reference)[model.HOST])
+
+    def test_historical_desktop_profile_migrates_without_assuming_flashed_cpi(self):
+        config=copy.deepcopy(BASE_CONFIG)
+        del config['hyprland']['declaredCpi'];del config['hyprland']['accelProfile']
+        migrated=model.validate(config)
+        self.assertEqual(migrated['hyprland']['declaredCpi'],0)
+        self.assertEqual(migrated['hyprland']['accelProfile'],'adaptive')
+        self.assertNotIn('MOUSE_DPI=',model.render_hwdb(migrated))
+
+    def test_dpi_and_acceleration_reject_invalid_values(self):
+        for key,value in [('declaredCpi',True),('declaredCpi',650),('declaredCpi',3300),('accelProfile','flat"; os.execute("bad")')]:
+            config=copy.deepcopy(BASE_CONFIG);config['hyprland'][key]=value
+            with self.subTest(key=key,value=value),self.assertRaises(model.Invalid):model.validate(config)
+
+    @unittest.skipUnless(shutil.which('systemd-hwdb'),'systemd-hwdb is not installed')
+    def test_dpi_hwdb_compiles_and_matches_only_skree_pointers(self):
+        config=copy.deepcopy(BASE_CONFIG);config['hyprland']['declaredCpi']=3200
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);target=root/'etc/udev/hwdb.d/99-skree-control.hwdb'
+            target.parent.mkdir(parents=True);target.write_text(model.render_hwdb(config))
+            subprocess.run(['systemd-hwdb','--root',folder,'update'],check=True,capture_output=True)
+            for match in model.HWDB_MATCHES:
+                query=match.removesuffix('*')
+                result=subprocess.run(['systemd-hwdb','--root',folder,'query',query],text=True,capture_output=True)
+                self.assertEqual(result.returncode,0,result.stderr)
+                self.assertIn('MOUSE_DPI=3200',result.stdout)
+            for query in ['mouse:usb:v1234p5678:name:Other Mouse:', 'mouse:bluetooth:v0000p615e:name:Skree Custom Mouse:']:
+                result=subprocess.run(['systemd-hwdb','--root',folder,'query',query],text=True,capture_output=True)
+                self.assertNotIn('MOUSE_DPI=',result.stdout)
 
 
 class LocalGitWorkspace(server.Workspace):
