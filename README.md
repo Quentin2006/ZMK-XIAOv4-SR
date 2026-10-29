@@ -36,6 +36,8 @@ History can load an earlier configuration as a draft; saving it creates a new co
 
 The editor intentionally uses a separate branch. Merge its pull request when ready; it does not automatically modify `main`.
 
+The Keyboard page also offers a read-only **Current / Suggested** comparison. Suggested replaces the four base arrow positions with Tab, Escape, Enter, and Backspace, while retaining Fn+HJKL arrows and the old Enter as a backup. This visual preview never changes the draft or saved firmware. Open `http://127.0.0.1:8766/?preview=suggested` to view it directly.
+
 ## What takes effect where
 
 | Setting | Takes effect |
