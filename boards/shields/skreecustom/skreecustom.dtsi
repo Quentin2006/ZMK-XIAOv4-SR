@@ -78,7 +78,7 @@
         // from scrolling many notches for a tiny roll; tune the divisor here.
         scroller {
             layers = <4>;
-            input-processors = <&zip_xy_to_scroll_mapper &zip_scroll_scaler 1 64>;
+            input-processors = <&zip_xy_to_scroll_mapper &zip_scroll_transform (INPUT_TRANSFORM_Y_INVERT) &zip_scroll_scaler 1 64>;
         };
     };
 };

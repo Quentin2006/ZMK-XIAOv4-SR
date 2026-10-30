@@ -36,7 +36,7 @@ History can load an earlier configuration as a draft; saving it creates a new co
 
 The editor intentionally uses a separate branch. Merge its pull request when ready; it does not automatically modify `main`.
 
-The base arrow cluster is now the trackball control cluster: left arrow is left click, right arrow is right click, up arrow is middle click, and down arrow toggles scroll mode. In scroll mode the trackball emits wheel events; press the down arrow again to return to pointer movement. Enter and Delete are swapped on the right thumb cluster.
+The base arrow cluster keeps Up/Down as arrows, while Left/Right are trackball clicks. Hold Fn and press Left for middle click, or Right to toggle scroll mode. In scroll mode the trackball emits wheel events; press Fn+Right again to return to pointer movement. Enter and Delete are swapped on the right thumb cluster.
 
 ## What takes effect where
 
@@ -60,7 +60,7 @@ pkexec /usr/bin/python3 "$PWD/editor/install-dpi.py"
 
 This backs up any previous managed declaration, rebuilds the system hardware database, and updates only Skree input nodes. Reconnect the keyboard afterwards so libinput reads the new resolution. The web server never invokes the privileged installer. Save & apply loads acceleration and sensitivity through the user-owned Hyprland module. Other mice do not match these DPI rules.
 
-The baseline desktop profile retains the existing slash swap and right-button hold-to-scroll. Left+right mouse-button emulation is optional. **Right-click + Backspace is not implemented as a desktop chord.** The base up arrow now provides a dedicated middle click, and the down arrow toggles firmware scroll mode.
+The baseline desktop profile retains the existing slash swap and right-button hold-to-scroll. Left+right mouse-button emulation is optional. **Right-click + Backspace is not implemented as a desktop chord.** The Fn layer provides a dedicated middle click and a firmware scroll-mode toggle on the left/right arrow keys.
 
 Desktop apply backs up `input.lua`, the managed module, and the XKB map in ignored `.local-state/desktop-backups/`. It migrates the two prior Skree blocks to `require("hypr.skree-control")`, preserves other settings, compiles the XKB map, reloads Hyprland, and checks configuration errors. Failure restores the previous files and reloads them. No firmware is flashed by the site.
 
@@ -68,14 +68,14 @@ Desktop apply backs up `input.lua`, the managed module, and the XKB map in ignor
 
 Use **Base**, one held **Fn** layer, the automatic **Mouse** layer, and a **Scroll** mode layer. The right thumb key previously labeled L2 now sends standard Alt (`&kp LALT`), matching the existing left-side Alt. Hold the left L1 thumb key for Fn.
 
-| Base arrow key | Action |
-| --- | --- |
-| Left | Left click |
-| Right | Right click |
-| Up | Middle click |
-| Down | Toggle scroll mode |
+| Arrow key | Base | Hold Fn |
+| --- | --- | --- |
+| Left | Left click | Middle click |
+| Right | Right click | Toggle scroll mode |
+| Up | Up arrow | Page Up |
+| Down | Down arrow | Page Down |
 
-Scroll mode maps trackball motion to vertical/horizontal wheel events at 1/64 scale. Press the down arrow again to return to pointer movement. The right thumb cluster has **Enter** on the middle key and **Delete** on the inner key.
+Scroll mode maps trackball motion to vertical/horizontal wheel events at 1/64 scale, with vertical direction inverted to match the ball. Press Fn+Right again to return to pointer movement. Home and End moved to Fn+`;` and Fn+`'`. The right thumb cluster has **Enter** on the middle key and **Delete** on the inner key.
 
 | Hold Fn and press | Result |
 | --- | --- |
