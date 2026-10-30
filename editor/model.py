@@ -24,7 +24,7 @@ HWDB_MATCHES = [
     "mouse:usb:v1d50p615e:name:ZMK Project Skree Custom Keyboard:*",
     "mouse:usb:v1d50p615e:name:Skree Custom Mouse:*",
 ]
-LAYER_IDS = ["default_layer", "layer_1", "layer_2", "layer_3"]
+LAYER_IDS = ["default_layer", "layer_1", "layer_2", "layer_3", "layer_4"]
 KEY_CODES = set(json.loads((ROOT / "editor/static/keycodes.json").read_text()))
 MODIFIERS = {"LC", "RC", "LS", "RS", "LA", "RA", "LG", "RG"}
 MOUSE_CODES = {"LCLK", "RCLK", "MCLK", "MB4", "MB5"}
@@ -66,7 +66,7 @@ def validate_binding(binding):
     if behavior == "kp":
         require(len(args) == 1 and valid_key(args[0]), "Choose a valid ZMK key symbol or modifier expression.")
     elif behavior in {"mo", "to", "tog"}:
-        require(len(args) == 1 and args[0] in {"0", "1", "2", "3"}, "Layer must be 0–3.")
+        require(len(args) == 1 and args[0] in {"0", "1", "2", "3", "4"}, "Layer must be 0–4.")
     elif behavior in {"trans", "none", "bootloader", "sys_reset"}:
         require(not args, "This behavior takes no arguments.")
     elif behavior == "mkp":
@@ -88,7 +88,7 @@ def validate(config):
     require(config["hardware"] == {"profile": "skree-std-62-pmw3610", "vendorCommit": "487828c994aea35e24bdb38051a0ac7a4ef64c04", "keyCount": 62}, "The hardware profile cannot be changed in this editor.")
     fw = config["firmware"]
     exact_keys(fw, ["layers", "trackball"], "firmware")
-    require(isinstance(fw["layers"], list) and len(fw["layers"]) == 4, "Exactly four firmware layers are required.")
+    require(isinstance(fw["layers"], list) and len(fw["layers"]) == 5, "Exactly five firmware layers are required.")
     for i, layer in enumerate(fw["layers"]):
         exact_keys(layer, ["id", "name", "bindings"], "layer")
         require(layer["id"] == LAYER_IDS[i], "Layer identities must stay in matrix order.")

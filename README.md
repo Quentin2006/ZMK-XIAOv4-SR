@@ -1,6 +1,6 @@
 # Skree Control
 
-A local web control panel for this **62-key Skree Std with a right PMW3610 trackball**. Select keys on a split layout, edit four layers, adjust trackball preferences, review the generated changes, and commit and push them to this repository using your existing GitHub sign-in.
+A local web control panel for this **62-key Skree Std with a right PMW3610 trackball**. Select keys on a split layout, edit five layers, adjust trackball preferences, review the generated changes, and commit and push them to this repository using your existing GitHub sign-in.
 
 ## Run locally
 
@@ -36,7 +36,7 @@ History can load an earlier configuration as a draft; saving it creates a new co
 
 The editor intentionally uses a separate branch. Merge its pull request when ready; it does not automatically modify `main`.
 
-The Keyboard page also offers a read-only **Current / Suggested** comparison. Suggested replaces the four base arrow positions with Tab, Escape, Enter, and Backspace, while retaining Fn+HJKL arrows and the old Enter as a backup. This visual preview never changes the draft or saved firmware. Open `http://127.0.0.1:8766/?preview=suggested` to view it directly.
+The base arrow cluster is now the trackball control cluster: left arrow is left click, right arrow is right click, up arrow is middle click, and down arrow toggles scroll mode. In scroll mode the trackball emits wheel events; press the down arrow again to return to pointer movement. Enter and Delete are swapped on the right thumb cluster.
 
 ## What takes effect where
 
@@ -60,13 +60,22 @@ pkexec /usr/bin/python3 "$PWD/editor/install-dpi.py"
 
 This backs up any previous managed declaration, rebuilds the system hardware database, and updates only Skree input nodes. Reconnect the keyboard afterwards so libinput reads the new resolution. The web server never invokes the privileged installer. Save & apply loads acceleration and sensitivity through the user-owned Hyprland module. Other mice do not match these DPI rules.
 
-The baseline desktop profile retains the existing slash swap and right-button hold-to-scroll. Left+right mouse-button emulation is optional. **Right-click + Backspace is not implemented as a desktop chord.** To assign a dedicated middle-click key in firmware, choose a key on the Mouse layer and set Mouse button → Middle click. This changes that key whenever the Mouse layer is active.
+The baseline desktop profile retains the existing slash swap and right-button hold-to-scroll. Left+right mouse-button emulation is optional. **Right-click + Backspace is not implemented as a desktop chord.** The base up arrow now provides a dedicated middle click, and the down arrow toggles firmware scroll mode.
 
 Desktop apply backs up `input.lua`, the managed module, and the XKB map in ignored `.local-state/desktop-backups/`. It migrates the two prior Skree blocks to `require("hypr.skree-control")`, preserves other settings, compiles the XKB map, reloads Hyprland, and checks configuration errors. Failure restores the previous files and reloads them. No firmware is flashed by the site.
 
 ## Current keyboard profile
 
-Use **Base**, one held **Fn** layer, and the automatic **Mouse** layer. The right thumb key previously labeled L2 now sends standard Alt (`&kp LALT`), matching the existing left-side Alt. Hold the left L1 thumb key for Fn.
+Use **Base**, one held **Fn** layer, the automatic **Mouse** layer, and a **Scroll** mode layer. The right thumb key previously labeled L2 now sends standard Alt (`&kp LALT`), matching the existing left-side Alt. Hold the left L1 thumb key for Fn.
+
+| Base arrow key | Action |
+| --- | --- |
+| Left | Left click |
+| Right | Right click |
+| Up | Middle click |
+| Down | Toggle scroll mode |
+
+Scroll mode maps trackball motion to vertical/horizontal wheel events at 1/64 scale. Press the down arrow again to return to pointer movement. The right thumb cluster has **Enter** on the middle key and **Delete** on the inner key.
 
 | Hold Fn and press | Result |
 | --- | --- |
@@ -88,7 +97,7 @@ The original repository configured a different, 60-key shift-register board. Thi
 
 `editor/config.json` records the configuration. The generator updates only:
 
-- the four 62-position binding arrays in `config/skreecustom.keymap`;
+- the five 62-position binding arrays in `config/skreecustom.keymap`;
 - the automatic mouse-layer timeout in `boards/shields/skreecustom/skreecustom.dtsi`;
 - the sensor CPI in `boards/shields/skreecustom/skreecustom_right.overlay`;
 - `desktop/hyprland/skree-control.lua`.
@@ -96,7 +105,7 @@ The original repository configured a different, 60-key shift-register board. Thi
 
 The full slash-swap XKB map is stored in `desktop/hyprland/skree-swapped-slashes.xkb`. Matrix IDs in `editor/static/geometry.json` follow the electrical transform, including the asymmetric 32-key left / 30-key right halves. Key positions are schematic. The known non-responsive slash position remains a separate hardware/mapping investigation; this editor does not repair an electrical fault.
 
-For manual JSON edits, run `python3 editor/configure.py` and commit the generated files together. Manual source edits must be reconciled into the JSON before the panel can save; they are never silently overwritten. The editor supports the current four-layer profile and a validated set of ZMK behaviors rather than arbitrary device-tree source.
+For manual JSON edits, run `python3 editor/configure.py` and commit the generated files together. Manual source edits must be reconciled into the JSON before the panel can save; they are never silently overwritten. The editor supports the current five-layer profile and a validated set of ZMK behaviors rather than arbitrary device-tree source.
 
 ## Firmware builds
 
@@ -105,7 +114,7 @@ Pushing runs the repository's ZMK v0.3 workflow for `seeeduino_xiao_ble` with `s
 - **Physical left, without trackball:** flash `skreecustom_left`.
 - **Physical right, blue trackball:** flash `skreecustom_right`.
 
-Use a USB data cable and double-press the half's physical reset button to enter its UF2 bootloader, then copy only the matching image to that half's drive. Keep settings-reset images separate. Flashing is a manual step outside this app.
+The scroll mode lives in `boards/shields/skreecustom/skreecustom.dtsi` as a layer-4 input-listener override, so both halves must be built from the same commit. Use a USB data cable and double-press the half's physical reset button to enter its UF2 bootloader, then copy only the matching image to that half's drive. Keep settings-reset images separate. Flashing is a manual step outside this app.
 
 ## Validate
 
@@ -115,4 +124,4 @@ python3 -m unittest discover -s editor -p 'test_*.py' -v
 node --check editor/static/app.js
 ```
 
-Tests cover all 248 bindings, matrix identities, validation, exact edits, real commits and pushes to a disposable local bare repository, stale/dirty/source-drift rejection, push recovery, historical restore, desktop migration and rollback, and local HTTP protections. CI runs the same checks alongside the firmware builds. No JavaScript package installation or frontend build is required.
+Tests cover all 310 bindings, matrix identities, validation, exact edits, real commits and pushes to a disposable local bare repository, stale/dirty/source-drift rejection, push recovery, historical restore, desktop migration and rollback, and local HTTP protections. CI runs the same checks alongside the firmware builds. No JavaScript package installation or frontend build is required.

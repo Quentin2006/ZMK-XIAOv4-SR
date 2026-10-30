@@ -4,8 +4,6 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 const copy = (value) => JSON.parse(JSON.stringify(value));
 const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let state, draft, geometry, catalog, layer = 0, selected = 0, view = "keyboard", recording = false, busy = false, staleDraft = false, draftRevision;
-let suggestedPreview = new URLSearchParams(window.location.search).get("preview")==="suggested";
-const suggestedKeys = {48:"&kp TAB",49:"&kp ESC",50:"&kp RET",51:"&kp BSPC"};
 const storageKey = "skree-control-draft-v1";
 const symbols = {ESC:"Esc",TAB:"Tab",LSHFT:"Shift",RSHFT:"Shift",LCTRL:"Ctrl",RCTRL:"Ctrl",LALT:"Alt",RALT:"Alt",LGUI:"Super",RGUI:"Super",SPACE:"Space",BSPC:"Bksp",RET:"Enter",DEL:"Del",GRAVE:"`",EQUAL:"=",MINUS:"−",SEMI:";",SQT:"'",COMMA:",",DOT:".",FSLH:"/",BSLH:"\\",LBKT:"[",RBKT:"]",LEFT:"←",RIGHT:"→",UP:"↑",DOWN:"↓",CAPS:"Caps",HOME:"Home",END:"End",PG_UP:"PgUp",PG_DN:"PgDn",INS:"Ins"};
 const shifted = {"1":"!","2":"@","3":"#","4":"$","5":"%","6":"^","7":"&","8":"*","9":"(","0":")","=":"+","−":"_",";":":","'":'"',"`":"~",",":"<",".":">","/":"?","\\":"|","[":"{","]":"}"};
@@ -36,17 +34,10 @@ async function api(path,payload) {
   if(!response.ok)throw new Error(body.error||`Request failed (${response.status})`);
   return body;
 }
-function displayBinding(index, layerIndex=layer) {
-  return suggestedPreview&&layerIndex===0&&suggestedKeys[index] ? suggestedKeys[index] : draft.firmware.layers[layerIndex].bindings[index];
-}
 function effectiveBinding(index) {
-  let result=displayBinding(index);
-  if(result==="&trans"&&layer!==0)result=displayBinding(index,0);
+  let result=draft.firmware.layers[layer].bindings[index];
+  if(result==="&trans"&&layer!==0)result=draft.firmware.layers[0].bindings[index];
   return result;
-}
-function setLayoutPreview(enabled) {
-  suggestedPreview=enabled;recording=false;layer=0;selected=enabled?50:0;
-  renderStatus();renderKeyboard();renderInspector();
 }
 function labelFor(binding,short=false) {
   const [behavior,arg,extra]=binding.split(/\s+/);
@@ -54,6 +45,7 @@ function labelFor(binding,short=false) {
   if(behavior==="&kp")return symbols[arg]||(/^N[0-9]$/.test(arg)?arg.slice(1):arg);
   if(behavior==="&mo")return `L${arg}`;
   if(behavior==="&to")return `→ L${arg}`;
+  if(behavior==="&tog"&&arg==="4")return short?"Scrl":"Scroll mode";
   if(behavior==="&tog")return `↔ L${arg}`;
   if(behavior==="&mkp")return (short?mouseShort:mouseNames)[arg]||arg;
   if(behavior==="&trans")return "▽";
@@ -70,18 +62,13 @@ function locationFor(index) {
   return `${[52,53,54,56,57,58].includes(index)?"Left":"Right"} thumb cluster`;
 }
 function renderKeyboard() {
-  $("#show-current").setAttribute("aria-pressed",String(!suggestedPreview));
-  $("#show-suggestion").setAttribute("aria-pressed",String(suggestedPreview));
-  $("#suggestion-notice").hidden=!suggestedPreview;
   $("#layer-tabs").innerHTML=draft.firmware.layers.map((item,i)=>i===2&&!$("#show-all-layers").checked?"":`<button type="button" class="layer-tab ${i===layer?"active":""}" role="tab" aria-selected="${i===layer}" aria-controls="keyboard-hands" data-layer="${i}"><span>0${i}</span>${escapeHTML(item.name)}</button>`).join("");
   $("#keyboard-hands").innerHTML=[0,1].map(side=>{
     const outline=side===0?'M12 67 Q160 9 317 69 L324 251 Q316 279 294 283 L306 439 Q237 456 165 385 L20 276 Z':'M12 69 Q160 9 317 67 L312 276 L170 385 Q100 456 31 439 L44 283 Q17 279 10 251 Z';
     const keys=geometry.keys.filter(k=>k.side===side).map(k=>{
-      const raw=displayBinding(k.i),binding=effectiveBinding(k.i),label=labelFor(binding,true),baseLabel=labelFor(displayBinding(k.i,0));
-      const proposed=suggestedPreview&&layer===0&&Object.hasOwn(suggestedKeys,k.i);
-      const navigation=suggestedPreview&&layer===1&&[30,31,32,33].includes(k.i);
-      const klass=["key",proposed?"key-proposed":"",navigation?"key-navigation":"",binding.startsWith("&mo")||binding.startsWith("&to")||binding.startsWith("&tog")?"key-layer":"",binding.startsWith("&mkp")?"key-mouse":"",k.i>=48&&k.i<=51?"key-arrow":"",raw==="&trans"?"key-transparent":"",k.i===selected?"selected":"",raw!==state.config.firmware.layers[layer].bindings[k.i]?"changed":"",k.i===46?"hardware-fault":""].filter(Boolean).join(" ");
-      const sup=proposed?`was ${labelFor(draft.firmware.layers[0].bindings[k.i],true)}`:suggestedPreview&&layer===0&&k.i===61?"backup":layer===0&&binding.startsWith("&kp")?shifted[label]:binding.startsWith("&mo")?"hold":"";
+      const raw=draft.firmware.layers[layer].bindings[k.i],binding=effectiveBinding(k.i),label=labelFor(binding,true),baseLabel=labelFor(draft.firmware.layers[0].bindings[k.i]);
+      const klass=["key",binding.startsWith("&mo")||binding.startsWith("&to")||binding.startsWith("&tog")?"key-layer":"",binding.startsWith("&mkp")?"key-mouse":"",k.i>=48&&k.i<=51?"key-arrow":"",raw==="&trans"?"key-transparent":"",k.i===selected?"selected":"",raw!==state.config.firmware.layers[layer].bindings[k.i]?"changed":"",k.i===46?"hardware-fault":""].filter(Boolean).join(" ");
+      const sup=layer===0&&binding.startsWith("&kp")?shifted[label]:binding.startsWith("&mo")?"hold":"";
       const labelMarkup=label.includes(" ")?label.split(" ").map(x=>`<span class="two-line">${escapeHTML(x)}</span>`).join(""):`<span>${escapeHTML(label)}</span>`;
       return `<button type="button" class="${klass}" data-key="${k.i}" aria-label="${escapeHTML(`${baseLabel}, position ${k.i+1}: ${labelFor(binding)}${raw==="&trans"?", transparent":""}${k.i===46?", known unresponsive position":""}`)}" aria-pressed="${k.i===selected}">${sup?`<span class="shift-symbol">${escapeHTML(sup)}</span>`:""}${labelMarkup}</button>`;
     }).join("");
@@ -97,14 +84,7 @@ function renderKeyboard() {
   });
 }
 function renderInspector() {
-  if(view==="keyboard")$("#page-description").textContent=suggestedPreview?"Compare the suggestion with your current layout.":titles.keyboard[1];
-  $(".inspector").classList.toggle("proposal-mode",suggestedPreview);
-  $("#proposal-inspector").hidden=!suggestedPreview;
-  if(suggestedPreview) {
-    const current=draft.firmware.layers[layer].bindings[selected];
-    $("#proposal-inspector").innerHTML=`<span class="outline-tag">LAYOUT PREVIEW</span><h2>${escapeHTML(labelFor(effectiveBinding(selected)))}</h2><p class="muted-note">${escapeHTML(locationFor(selected))}<br>Current: ${escapeHTML(labelFor(current))}</p><h3>Orange keys become</h3><div class="proposal-pairs">${Object.entries(suggestedKeys).map(([index,binding])=>`<div><span>${Number(index)<50?"Left":"Right"} ${["←","→","↑","↓"][Number(index)-48]}</span><span>→</span><strong>${escapeHTML(labelFor(binding))}</strong></div>`).join("")}</div><h3>Arrows stay on Fn</h3><div class="proposal-nav"><kbd>H<br>←</kbd><kbd>J<br>↓</kbd><kbd>K<br>↑</kbd><kbd>L<br>→</kbd></div><p class="muted-note">Hold your left L1 / Fn key. Select the Fn tab to see the arrows on the keyboard.</p><p class="muted-note">The old Enter stays as a backup. Space, Alt, and mouse keys keep their assignments.</p><div class="inspector-footer"><span class="outline-tag">NOT SAVED OR FLASHED</span></div>`;
-    return;
-  }
+  if(view==="keyboard")$("#page-description").textContent=titles.keyboard[1];
   const binding=draft.firmware.layers[layer].bindings[selected];
   const [behavior,arg,extra]=binding.split(/\s+/);const kind=behavior.slice(1);
   $("#selected-index").textContent=`POSITION ${String(selected+1).padStart(2,"0")}`;
@@ -147,7 +127,7 @@ function renderStatus() {
   $("#discard").hidden=!dirty&&!staleDraft;
   $("#save-state").classList.toggle("unsaved",dirty);
   $("#save-state").innerHTML=`<i></i>${dirty?`${count} unsaved change${count===1?"":"s"}`:state.dirty?"Checkout has file edits":state.pendingPush?"Local commits awaiting push":"Saved to GitHub"}`;
-  $("#review").disabled=(suggestedPreview&&view==="keyboard")||busy||!dirty||staleDraft||Boolean(state.sourceDrift?.length);
+  $("#review").disabled=busy||!dirty||staleDraft||Boolean(state.sourceDrift?.length);
   $("#apply-desktop").disabled=busy||dirty||state.dirty||Boolean(state.sourceDrift?.length);
   $("#apply-desktop").hidden=state.desktopApplied;
   $("#apply-state").textContent=dirty?"Draft changes · desktop settings apply when you save.":state.desktopApplied?"Desktop settings applied · firmware edits require flashing.":"Saved desktop settings haven’t been applied yet.";
@@ -236,19 +216,16 @@ async function start() {
     $("#declared-cpi").innerHTML='<option value="0">System default · no override</option>'+Array.from({length:16},(_,i)=>`<option value="${(i+1)*200}">${(i+1)*200} CPI</option>`).join("");
     $("#sensor-cpi").innerHTML=Array.from({length:16},(_,i)=>`<option value="${(i+1)*200}">${(i+1)*200} CPI</option>`).join("");
     if(state.sourceDrift?.length)showError("Generated files differ from the saved profile: "+state.sourceDrift.join(", ")+". Reconcile those edits before saving; they will not be overwritten.");
-    if(suggestedPreview)selected=50;
     renderAll();
   }catch(error){showError("Could not load the local repository. "+error.message);$("#save-state").textContent="Connection unavailable";$("#review").disabled=true;return;}
   $$(".nav-item").forEach(button=>button.addEventListener("click",()=>switchView(button.dataset.view)));
-  $("#show-current").addEventListener("click",()=>setLayoutPreview(false));
-  $("#show-suggestion").addEventListener("click",()=>setLayoutPreview(true));
   $("#show-all-layers").addEventListener("change",()=>{if(layer===2&&!$("#show-all-layers").checked)layer=0;renderKeyboard();renderInspector();});
   $("#behavior").addEventListener("change",event=>{const kind=event.target.value;assign({kp:"&kp A",mo:"&mo 1",to:"&to 0",tog:"&tog 1",mkp:"&mkp MCLK",trans:"&trans",none:"&none",bt:"&bt BT_NXT",rgb_ug:"&rgb_ug RGB_TOG",bootloader:"&bootloader",sys_reset:"&sys_reset"}[kind]);});
   $("#reset-key").addEventListener("click",()=>assign(state.config.firmware.layers[layer].bindings[selected]));
   $$("[data-setting]").forEach(input=>input.addEventListener(input.type==="range"?"input":"change",()=>{draft.hyprland[input.dataset.setting]=input.type==="checkbox"?input.checked:input.type==="range"||input.dataset.setting==="declaredCpi"?Number(input.value):input.value;changed();if(input.dataset.setting==="declaredCpi")renderSettings();if(input.dataset.setting==="accelProfile"||input.dataset.setting==="sensitivity")renderAccelerationHint();if(input.dataset.setting==="scrollFactor")$("#scroll-factor-value").textContent=Number(input.value).toFixed(1)+"×";if(input.dataset.setting==="sensitivity")$("#sensitivity-value").textContent=Number(input.value).toFixed(2);}));
   $("#sensor-cpi").addEventListener("change",event=>{draft.firmware.trackball.cpi=Number(event.target.value);changed();});
   $("#mouse-timeout").addEventListener("change",event=>{const value=Number(event.target.value);if(!Number.isInteger(value)||value<100||value>5000){toast("Choose a duration from 100 to 5000 ms.",true);renderSettings();return;}draft.firmware.trackball.autoMouseTimeoutMs=value;changed();});
-  $("#open-mouse-layer").addEventListener("click",()=>{suggestedPreview=false;layer=3;selected=54;renderStatus();renderKeyboard();renderInspector();switchView("keyboard");});
+  $("#open-mouse-layer").addEventListener("click",()=>{layer=3;selected=54;renderStatus();renderKeyboard();renderInspector();switchView("keyboard");});
   $("#review").addEventListener("click",review);$("#save-github").addEventListener("click",saveGitHub);$("#refresh").addEventListener("click",refreshGitHub);$("#apply-desktop").addEventListener("click",applyDesktop);
   $("#review-dialog").addEventListener("cancel",event=>{if(busy)event.preventDefault();});
   $$(".close-dialog").forEach(button=>button.addEventListener("click",()=>{if(!busy)$("#review-dialog").close();}));

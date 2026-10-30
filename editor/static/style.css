@@ -357,26 +357,12 @@ dialog::backdrop{background:#080b0fc9;backdrop-filter:blur(5px)}
 @media(max-width:700px){.heading-actions{gap:12px}.heading-actions .button{font-size:11px;gap:9px;padding:10px}.heading-actions .text-button{font-size:10px}.page-heading{align-items:center}.page-heading h1{font-size:27px}.page-heading p{font-size:11px;max-width:250px}.profile-status{align-items:flex-start;font-size:10px;padding:12px}.profile-status .status-light{margin-top:5px}.profile-status .text-button{white-space:normal}.advanced>summary{padding:17px}.advanced>summary span{display:none}.advanced-body{padding:4px 18px 20px}.workspace-footer{gap:15px;line-height:1.7}.content{padding-top:23px}.topbar .breadcrumb{letter-spacing:.5px}}
 @media(max-width:420px){.heading-actions{width:100%;justify-content:flex-end}.page-heading{gap:15px}.profile-status{flex-wrap:wrap}.profile-status .text-button{margin-left:16px}.page-heading p{max-width:none}}
 
-/* Read-only comparison keeps suggestions separate from the editable draft. */
-.layout-comparison{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px;padding:16px 18px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
-.layout-comparison strong{font-size:13px;font-weight:550}
-.layout-comparison p{font-size:11px;color:var(--muted);margin:6px 0 0;line-height:1.6}
-.comparison-switch{display:flex;gap:4px;padding:4px;background:#12161b;border-radius:6px;flex-shrink:0}
-.comparison-switch button{padding:9px 13px;border:1px solid transparent;border-radius:4px;background:none;color:var(--muted);font-size:11px}
-.comparison-switch button[aria-pressed=true]{background:#293b49;border-color:#4d748c;color:#c6e5fa}
-.suggestion-notice{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding:13px 16px;background:#1b2b36;border:1px solid #3c596e;border-radius:7px;font-size:11px;line-height:1.7;color:#b7cee0}
-.suggestion-notice strong{color:#d0ebff;white-space:nowrap}
-.key.key-proposed{outline:2px solid #8ac5eb;outline-offset:3px;background:linear-gradient(#416c89,#294a64);border-color:#9bceef;color:#eef8ff}
-.key.key-proposed .shift-symbol{color:#bbd4e6;font-size:7px}
-.key.key-proposed.selected{outline:3px solid #b0defb;background:#456f8a}
-.key.key-navigation{outline:2px solid #8ac5eb;outline-offset:2px;opacity:1;background:#294a64;color:#e1f3ff}
-.inspector.proposal-mode{display:block}
-.inspector.proposal-mode>:not(#proposal-inspector){display:none}
-#proposal-inspector h2{font:25px var(--mono);color:#c6e6fb;margin:24px 0 8px}
-#proposal-inspector h3{font-size:12px;font-weight:550;margin:24px 0 12px}
-.proposal-pairs>div{display:grid;grid-template-columns:1fr 18px 1fr;gap:8px;align-items:center;border-bottom:1px solid var(--line-soft);padding:12px 0;font-size:12px}
-.proposal-pairs>div>span{color:var(--muted)}
-.proposal-pairs strong{color:#c6e6fb;font-weight:500}
-.proposal-nav{display:flex;gap:7px}
-.proposal-nav kbd{min-width:0;flex:1;padding:8px 4px;font-size:11px;line-height:1.6;text-align:center}
-@media(max-width:700px){.layout-comparison{align-items:flex-start;flex-wrap:wrap;padding:15px}.layout-comparison p{font-size:10px}.comparison-switch{margin-left:auto}.suggestion-notice{align-items:flex-start;flex-direction:column;gap:3px}.key.key-proposed .shift-symbol{font-size:6px}}
+/* Trackball controls are part of the saved layout, not a preview. */
+.trackball-controls{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:18px;padding:16px 18px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.trackball-controls strong{font-size:13px;font-weight:550}
+.trackball-controls p{font-size:11px;color:var(--muted);margin:6px 0 0;line-height:1.6;max-width:640px}
+.control-pills{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0}
+.control-pills span{display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:#14181e;color:#aeb9c5;font-size:10px;white-space:nowrap}
+.control-pills kbd{min-width:20px;padding:3px 5px;border-bottom-width:2px;font-size:10px}
+@media(max-width:900px){.trackball-controls{align-items:flex-start;flex-direction:column;gap:12px}.control-pills{justify-content:flex-start}}
+@media(max-width:700px){.trackball-controls{padding:15px}.trackball-controls p{font-size:10px}.control-pills span{font-size:9px}}

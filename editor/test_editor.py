@@ -19,7 +19,7 @@ BASE_KEYMAP = (model.ROOT / model.KEYMAP).read_text()
 
 
 class ModelTests(unittest.TestCase):
-    def test_all_248_bindings_round_trip(self):
+    def test_all_310_bindings_round_trip(self):
         values = model.parse_keymap(BASE_KEYMAP)
         self.assertEqual(values, [layer["bindings"] for layer in BASE_CONFIG["firmware"]["layers"]])
         self.assertEqual(model.parse_keymap(model.render_keymap(BASE_KEYMAP, BASE_CONFIG["firmware"]["layers"])), values)
@@ -30,7 +30,7 @@ class ModelTests(unittest.TestCase):
         before = model.parse_keymap(BASE_KEYMAP)
         after_source = model.render_keymap(BASE_KEYMAP, config["firmware"]["layers"])
         after = model.parse_keymap(after_source)
-        differences = [(layer, key) for layer in range(4) for key in range(62) if before[layer][key] != after[layer][key]]
+        differences = [(layer, key) for layer in range(5) for key in range(62) if before[layer][key] != after[layer][key]]
         self.assertEqual(differences, [(3, 54)])
         def outside(source):
             spans = model.binding_spans(source)
