@@ -24,7 +24,7 @@ HWDB_MATCHES = [
     "mouse:usb:v1d50p615e:name:ZMK Project Skree Custom Keyboard:*",
     "mouse:usb:v1d50p615e:name:Skree Custom Mouse:*",
 ]
-LAYER_IDS = ["default_layer", "layer_1", "layer_2", "layer_3", "layer_4"]
+LAYER_IDS = ["default_layer", "layer_1", "layer_2", "layer_3"]
 KEY_CODES = set(json.loads((ROOT / "editor/static/keycodes.json").read_text()))
 MODIFIERS = {"LC", "RC", "LS", "RS", "LA", "RA", "LG", "RG"}
 MOUSE_CODES = {"LCLK", "RCLK", "MCLK", "MB4", "MB5"}
@@ -66,7 +66,7 @@ def validate_binding(binding):
     if behavior == "kp":
         require(len(args) == 1 and valid_key(args[0]), "Choose a valid ZMK key symbol or modifier expression.")
     elif behavior in {"mo", "to", "tog"}:
-        require(len(args) == 1 and args[0] in {"0", "1", "2", "3", "4"}, "Layer must be 0–4.")
+        require(len(args) == 1 and args[0] in {"0", "1", "2", "3"}, "Layer must be 0–3.")
     elif behavior in {"trans", "none", "bootloader", "sys_reset"}:
         require(not args, "This behavior takes no arguments.")
     elif behavior == "mkp":
@@ -88,7 +88,7 @@ def validate(config):
     require(config["hardware"] == {"profile": "skree-std-62-pmw3610", "vendorCommit": "487828c994aea35e24bdb38051a0ac7a4ef64c04", "keyCount": 62}, "The hardware profile cannot be changed in this editor.")
     fw = config["firmware"]
     exact_keys(fw, ["layers", "trackball"], "firmware")
-    require(isinstance(fw["layers"], list) and len(fw["layers"]) == 5, "Exactly five firmware layers are required.")
+    require(isinstance(fw["layers"], list) and len(fw["layers"]) == 4, "Exactly four firmware layers are required.")
     for i, layer in enumerate(fw["layers"]):
         exact_keys(layer, ["id", "name", "bindings"], "layer")
         require(layer["id"] == LAYER_IDS[i], "Layer identities must stay in matrix order.")
@@ -96,11 +96,9 @@ def validate(config):
         require(isinstance(layer["bindings"], list) and len(layer["bindings"]) == 62, "Each layer must contain all 62 key positions.")
         layer["bindings"] = [validate_binding(x) for x in layer["bindings"]]
     trackball = fw["trackball"]
-    exact_keys(trackball, ["cpi", "autoMouseLayer", "autoMouseTimeoutMs"], "sensor")
+    exact_keys(trackball, ["cpi"], "sensor")
     bounded(trackball["cpi"], 200, 3200, "Sensor CPI", True)
     require(trackball["cpi"] % 200 == 0, "Sensor CPI uses steps of 200.")
-    require(type(trackball["autoMouseLayer"]) is int and trackball["autoMouseLayer"] == 3, "The auto mouse layer must remain layer 3.")
-    bounded(trackball["autoMouseTimeoutMs"], 100, 5000, "Mouse-layer timeout", True)
     host = config["hyprland"]
     require(isinstance(host, dict), "Invalid desktop profile.")
     # Migrate historical profiles without inventing a DPI declaration for them.
@@ -198,8 +196,6 @@ def render_hwdb(config):
 def generated(config, root=ROOT):
     config = validate(copy.deepcopy(config))
     matrix = (root / MATRIX).read_text()
-    matrix, count = re.subn(r"<&zip_temp_layer\s+3\s+\d+>", f'<&zip_temp_layer 3 {config["firmware"]["trackball"]["autoMouseTimeoutMs"]}>', matrix)
-    require(count == 1, "Cannot safely find the mouse-layer processor.")
     sensor, count = re.subn(r"\bcpi\s*=\s*<\d+>", f'cpi = <{config["firmware"]["trackball"]["cpi"]}>', (root / SENSOR).read_text())
     require(count == 1, "Cannot safely find the trackball CPI.")
     return {CONFIG: json.dumps(config, indent=2) + "\n", KEYMAP: render_keymap((root / KEYMAP).read_text(), config["firmware"]["layers"]), MATRIX: matrix, SENSOR: sensor, HOST: render_host(config), HWDB: render_hwdb(config)}

@@ -1,6 +1,6 @@
 # Skree Control
 
-A local web control panel for this **62-key Skree Std with a right PMW3610 trackball**. Select keys on a split layout, edit five layers, adjust trackball preferences, review the generated changes, and commit and push them to this repository using your existing GitHub sign-in.
+A local web control panel for this **62-key Skree Std with a right PMW3610 trackball**. Select keys on a split layout, edit four layers, adjust trackball preferences, review the generated changes, and commit and push them to this repository using your existing GitHub sign-in.
 
 ## Run locally
 
@@ -43,7 +43,7 @@ The base arrow cluster keeps Up/Down as arrows, while Left/Right are trackball c
 | Setting | Takes effect |
 | --- | --- |
 | Slash/backslash swap, hold-button scrolling, middle-button emulation, scroll speed/direction, pointer sensitivity | On this computer when you choose Save & apply |
-| Key bindings, layers, sensor CPI, automatic mouse-layer timeout | On the keyboard after building and flashing matching firmware |
+| Key bindings, layers, sensor CPI | On the keyboard after building and flashing matching firmware |
 
 The trackball now uses **3200 CPI**, a matching **3200-DPI desktop declaration**, and **adaptive acceleration at sensitivity -0.4**. This provides slower fine movements and faster large movements. It is a starting point to tune by feel.
 
@@ -66,7 +66,7 @@ Desktop apply backs up `input.lua`, the managed module, and the XKB map in ignor
 
 ## Current keyboard profile
 
-Use **Base**, one held **Fn** layer, the automatic **Mouse** layer, and a **Scroll** mode layer. The right thumb key previously labeled L2 now sends standard Alt (`&kp LALT`), matching the existing left-side Alt. Hold the left L1 thumb key for Fn.
+Use **Base**, one held **Fn** layer, the unused historical layer, and a **Scroll** mode layer. The right thumb key previously labeled L2 now sends Tab (`&kp TAB`). Hold the left L1 thumb key for Fn.
 
 | Arrow key | Base | Hold Fn |
 | --- | --- | --- |
@@ -87,25 +87,24 @@ Scroll mode maps trackball motion to vertical/horizontal wheel events at 1/64 sc
 | N / M | Play or pause / Mute |
 | Comma / Period | Volume down / Volume up |
 
-Other Fn positions pass through to Base. Fn+Esc sends ordinary Escape. The automatic Mouse layer retains its vendor click assignments and 500 ms timeout. The unused logical Layer 2 slot retains the old system bindings for reference, but no physical key activates it. Keeping that slot preserves the established Mouse layer number 3.
+Other Fn positions pass through to Base. Fn+Esc sends ordinary Escape. The unused logical Layer 2 slot retains the old system bindings for reference, but no physical key activates it. Scroll mode is layer 3.
 
 These profile changes are saved firmware source. Build and flash both matching halves to activate them on the keyboard.
 
 ## Hardware and source of truth
 
-The original repository configured a different, 60-key shift-register board. This branch imports the correct vendor profile from [WainingForests/ZMK-XIAOv4-Std](https://github.com/WainingForests/ZMK-XIAOv4-Std/tree/NS-5x6%2B6%2B4-%2862%29%2BTBx1), branch `NS-5x6+6+4-(62)+TBx1`, commit `487828c994aea35e24bdb38051a0ac7a4ef64c04`. Both physical halves were previously flashed and read back against that vendor build. The current profile customizes its Fn layer and right Alt thumb key as documented above.
+The original repository configured a different, 60-key shift-register board. This branch imports the correct vendor profile from [WainingForests/ZMK-XIAOv4-Std](https://github.com/WainingForests/ZMK-XIAOv4-Std/tree/NS-5x6%2B6%2B4-%2862%29%2BTBx1), branch `NS-5x6+6+4-(62)+TBx1`, commit `487828c994aea35e24bdb38051a0ac7a4ef64c04`. Both physical halves were previously flashed and read back against that vendor build. The current profile customizes its Fn layer and right thumb key as documented above.
 
 `editor/config.json` records the configuration. The generator updates only:
 
-- the five 62-position binding arrays in `config/skreecustom.keymap`;
-- the automatic mouse-layer timeout in `boards/shields/skreecustom/skreecustom.dtsi`;
+- the four 62-position binding arrays in `config/skreecustom.keymap`;
 - the sensor CPI in `boards/shields/skreecustom/skreecustom_right.overlay`;
 - `desktop/hyprland/skree-control.lua`.
 - `desktop/linux/99-skree-control.hwdb` (install separately after changing the declared CPI).
 
 The full slash-swap XKB map is stored in `desktop/hyprland/skree-swapped-slashes.xkb`. Matrix IDs in `editor/static/geometry.json` follow the electrical transform, including the asymmetric 32-key left / 30-key right halves. Key positions are schematic. The known non-responsive slash position remains a separate hardware/mapping investigation; this editor does not repair an electrical fault.
 
-For manual JSON edits, run `python3 editor/configure.py` and commit the generated files together. Manual source edits must be reconciled into the JSON before the panel can save; they are never silently overwritten. The editor supports the current five-layer profile and a validated set of ZMK behaviors rather than arbitrary device-tree source.
+For manual JSON edits, run `python3 editor/configure.py` and commit the generated files together. Manual source edits must be reconciled into the JSON before the panel can save; they are never silently overwritten. The editor supports the current four-layer profile and a validated set of ZMK behaviors rather than arbitrary device-tree source.
 
 ## Firmware builds
 
@@ -114,7 +113,7 @@ Pushing runs the repository's ZMK v0.3 workflow for `seeeduino_xiao_ble` with `s
 - **Physical left, without trackball:** flash `skreecustom_left`.
 - **Physical right, blue trackball:** flash `skreecustom_right`.
 
-The scroll mode lives in `boards/shields/skreecustom/skreecustom.dtsi` as a layer-4 input-listener override, so both halves must be built from the same commit. Use a USB data cable and double-press the half's physical reset button to enter its UF2 bootloader, then copy only the matching image to that half's drive. Keep settings-reset images separate. Flashing is a manual step outside this app.
+The scroll mode lives in `boards/shields/skreecustom/skreecustom.dtsi` as a layer-3 input-listener override, so both halves must be built from the same commit. Use a USB data cable and double-press the half's physical reset button to enter its UF2 bootloader, then copy only the matching image to that half's drive. Keep settings-reset images separate. Flashing is a manual step outside this app.
 
 ## Validate
 
@@ -124,4 +123,4 @@ python3 -m unittest discover -s editor -p 'test_*.py' -v
 node --check editor/static/app.js
 ```
 
-Tests cover all 310 bindings, matrix identities, validation, exact edits, real commits and pushes to a disposable local bare repository, stale/dirty/source-drift rejection, push recovery, historical restore, desktop migration and rollback, and local HTTP protections. CI runs the same checks alongside the firmware builds. No JavaScript package installation or frontend build is required.
+Tests cover all 248 bindings, matrix identities, validation, exact edits, real commits and pushes to a disposable local bare repository, stale/dirty/source-drift rejection, push recovery, historical restore, desktop migration and rollback, and local HTTP protections. CI runs the same checks alongside the firmware builds. No JavaScript package installation or frontend build is required.

@@ -70,14 +70,12 @@
         compatible = "zmk,input-listener";
         status = "disabled";
         device = <&trackball_split>;
-	input-processors =
-	<&zip_temp_layer 3 500>;	// Activate mouse layer after trackball motion; timeout is editor-managed.
 
-        // Layer 4 is the scroll-mode toggle. While it is active the ball emits
+        // Layer 3 is the scroll-mode toggle. While it is active the ball emits
         // wheel events instead of pointer motion. 1/64 keeps a 3200-CPI ball
         // from scrolling many notches for a tiny roll; tune the divisor here.
         scroller {
-            layers = <4>;
+            layers = <3>;
             input-processors = <&zip_xy_to_scroll_mapper &zip_scroll_transform (INPUT_TRANSFORM_Y_INVERT) &zip_scroll_scaler 1 64>;
         };
     };

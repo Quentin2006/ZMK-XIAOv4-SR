@@ -12,7 +12,7 @@ const mouseNames = {LCLK:"Left click",RCLK:"Right click",MCLK:"Middle click",MB4
 const mouseShort = {LCLK:"L click",RCLK:"R click",MCLK:"M click",MB4:"Back",MB5:"Fwd"};
 const rgbNames = {RGB_TOG:"Toggle lighting",RGB_ON:"Lighting on",RGB_OFF:"Lighting off",RGB_EFF:"Next effect",RGB_EFR:"Previous effect",RGB_HUI:"Hue +",RGB_HUD:"Hue −",RGB_SAI:"Saturation +",RGB_SAD:"Saturation −",RGB_BRI:"Brightness +",RGB_BRD:"Brightness −",RGB_SPI:"Effect speed +",RGB_SPD:"Effect speed −"};
 const titles = {keyboard:["Keyboard","Select a key to change what it does."],trackball:["Trackball","Tune movement and scrolling. Save to apply on this computer."],history:["History","Your configuration, versioned in Git."]};
-const settingNames = {swapSlashes:"Slash / backslash swap",holdToScroll:"Hold to scroll",scrollButton:"Scroll button",middleClick:"Middle click",scrollFactor:"Scroll speed",naturalScroll:"Natural scrolling",sensitivity:"Sensitivity",accelProfile:"Acceleration",declaredCpi:"Desktop sensor resolution",cpi:"Firmware sensor resolution",autoMouseTimeoutMs:"Mouse-layer duration"};
+const settingNames = {swapSlashes:"Slash / backslash swap",holdToScroll:"Hold to scroll",scrollButton:"Scroll button",middleClick:"Middle click",scrollFactor:"Scroll speed",naturalScroll:"Natural scrolling",sensitivity:"Sensitivity",accelProfile:"Acceleration",declaredCpi:"Desktop sensor resolution",cpi:"Firmware sensor resolution"};
 
 function toast(message, error=false) {
   const node=$("#toast");node.textContent=message;node.hidden=false;node.classList.toggle("error",error);
@@ -144,7 +144,7 @@ function renderSettings() {
   $("#scroll-factor-value").textContent=Number(draft.hyprland.scrollFactor).toFixed(1)+"×";
   $("#sensitivity-value").textContent=Number(draft.hyprland.sensitivity).toFixed(2);
   $("#dpi-state").textContent=state.dpiInstalled&&draft.hyprland.declaredCpi===state.config.hyprland.declaredCpi?"Matches the installed desktop declaration.":"This DPI declaration needs a local system installation before it can take effect.";
-  $("#sensor-cpi").value=draft.firmware.trackball.cpi;$("#mouse-timeout").value=draft.firmware.trackball.autoMouseTimeoutMs;
+  $("#sensor-cpi").value=draft.firmware.trackball.cpi;
 }
 function changeValue(change,value) {
   if(typeof value==="boolean")return value?"On":"Off";
@@ -152,7 +152,6 @@ function changeValue(change,value) {
   if(change.label==="scrollFactor")return Number(value).toFixed(1)+"×";
   if(change.label==="sensitivity")return Number(value).toFixed(2);
   if(["cpi","declaredCpi"].includes(change.label))return value?`${value} CPI`:"System default";
-  if(change.label==="autoMouseTimeoutMs")return `${value} ms`;
   return ({"left-right-chord":"Left + right together",off:"Off",left:"Left click",right:"Right click",middle:"Middle click",adaptive:"Adaptive",flat:"Flat"})[value]||String(value);
 }
 function renderChangeRows(changes) {
@@ -224,8 +223,6 @@ async function start() {
   $("#reset-key").addEventListener("click",()=>assign(state.config.firmware.layers[layer].bindings[selected]));
   $$("[data-setting]").forEach(input=>input.addEventListener(input.type==="range"?"input":"change",()=>{draft.hyprland[input.dataset.setting]=input.type==="checkbox"?input.checked:input.type==="range"||input.dataset.setting==="declaredCpi"?Number(input.value):input.value;changed();if(input.dataset.setting==="declaredCpi")renderSettings();if(input.dataset.setting==="accelProfile"||input.dataset.setting==="sensitivity")renderAccelerationHint();if(input.dataset.setting==="scrollFactor")$("#scroll-factor-value").textContent=Number(input.value).toFixed(1)+"×";if(input.dataset.setting==="sensitivity")$("#sensitivity-value").textContent=Number(input.value).toFixed(2);}));
   $("#sensor-cpi").addEventListener("change",event=>{draft.firmware.trackball.cpi=Number(event.target.value);changed();});
-  $("#mouse-timeout").addEventListener("change",event=>{const value=Number(event.target.value);if(!Number.isInteger(value)||value<100||value>5000){toast("Choose a duration from 100 to 5000 ms.",true);renderSettings();return;}draft.firmware.trackball.autoMouseTimeoutMs=value;changed();});
-  $("#open-mouse-layer").addEventListener("click",()=>{layer=3;selected=54;renderStatus();renderKeyboard();renderInspector();switchView("keyboard");});
   $("#review").addEventListener("click",review);$("#save-github").addEventListener("click",saveGitHub);$("#refresh").addEventListener("click",refreshGitHub);$("#apply-desktop").addEventListener("click",applyDesktop);
   $("#review-dialog").addEventListener("cancel",event=>{if(busy)event.preventDefault();});
   $$(".close-dialog").forEach(button=>button.addEventListener("click",()=>{if(!busy)$("#review-dialog").close();}));

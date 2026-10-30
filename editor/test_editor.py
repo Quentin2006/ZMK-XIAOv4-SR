@@ -19,7 +19,7 @@ BASE_KEYMAP = (model.ROOT / model.KEYMAP).read_text()
 
 
 class ModelTests(unittest.TestCase):
-    def test_all_310_bindings_round_trip(self):
+    def test_all_248_bindings_round_trip(self):
         values = model.parse_keymap(BASE_KEYMAP)
         self.assertEqual(values, [layer["bindings"] for layer in BASE_CONFIG["firmware"]["layers"]])
         self.assertEqual(model.parse_keymap(model.render_keymap(BASE_KEYMAP, BASE_CONFIG["firmware"]["layers"])), values)
@@ -30,7 +30,7 @@ class ModelTests(unittest.TestCase):
         before = model.parse_keymap(BASE_KEYMAP)
         after_source = model.render_keymap(BASE_KEYMAP, config["firmware"]["layers"])
         after = model.parse_keymap(after_source)
-        differences = [(layer, key) for layer in range(5) for key in range(62) if before[layer][key] != after[layer][key]]
+        differences = [(layer, key) for layer in range(4) for key in range(62) if before[layer][key] != after[layer][key]]
         self.assertEqual(differences, [(3, 54)])
         def outside(source):
             spans = model.binding_spans(source)
@@ -53,7 +53,7 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(model.validate_binding("&kp LC(LS(C))"), "&kp LC(LS(C))")
 
     def test_hardware_identity_and_sensor_ranges_protected(self):
-        for path,value in [(('hardware','keyCount'),60), (('firmware','trackball','cpi'),650), (('firmware','trackball','autoMouseTimeoutMs'),0), (('hyprland','scrollFactor'),float('nan')), (('hyprland','swapSlashes'),1)]:
+        for path,value in [(('hardware','keyCount'),60), (('firmware','trackball','cpi'),650), (('hyprland','scrollFactor'),float('nan')), (('hyprland','swapSlashes'),1)]:
             config=copy.deepcopy(BASE_CONFIG)
             target=config
             for field in path[:-1]: target=target[field]
@@ -137,7 +137,7 @@ class WorkspaceTests(unittest.TestCase):
 
     def payload(self):
         config=copy.deepcopy(BASE_CONFIG);config['firmware']['layers'][3]['bindings'][54]='&mkp MCLK'
-        return {'config':config,'revision':self.workspace.revision(),'message':'Add middle click to Mouse layer Backspace'}
+        return {'config':config,'revision':self.workspace.revision(),'message':'Add middle click to a key'}
 
     def test_save_commits_generated_files_and_pushes_same_commit(self):
         before=self.workspace.head()
