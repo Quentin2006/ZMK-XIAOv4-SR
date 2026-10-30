@@ -22,6 +22,6 @@ try:
             path.write_text(contents)
     if stale:
         sys.exit("Generated sources differ from editor/config.json: " + ", ".join(stale))
-    print("62-key profile valid; all 248 layer bindings and generated sources are consistent.")
+    print("62-key profile valid; all 186 layer bindings and generated sources are consistent.")
 except (model.Invalid, ValueError) as error:
     sys.exit(str(error))

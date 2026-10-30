@@ -19,19 +19,24 @@ BASE_KEYMAP = (model.ROOT / model.KEYMAP).read_text()
 
 
 class ModelTests(unittest.TestCase):
-    def test_all_248_bindings_round_trip(self):
+    def test_all_186_bindings_round_trip(self):
         values = model.parse_keymap(BASE_KEYMAP)
         self.assertEqual(values, [layer["bindings"] for layer in BASE_CONFIG["firmware"]["layers"]])
         self.assertEqual(model.parse_keymap(model.render_keymap(BASE_KEYMAP, BASE_CONFIG["firmware"]["layers"])), values)
 
+    def test_middle_click_combo_is_preserved(self):
+        generated = model.generated(BASE_CONFIG)[model.KEYMAP]
+        self.assertIn("combo_middle_click", generated)
+        self.assertIn("key-positions = <48 49>", generated)
+
     def test_edit_changes_exactly_one_physical_binding(self):
         config = copy.deepcopy(BASE_CONFIG)
-        config["firmware"]["layers"][3]["bindings"][54] = "&mkp MCLK"
+        config["firmware"]["layers"][1]["bindings"][54] = "&mkp MCLK"
         before = model.parse_keymap(BASE_KEYMAP)
         after_source = model.render_keymap(BASE_KEYMAP, config["firmware"]["layers"])
         after = model.parse_keymap(after_source)
-        differences = [(layer, key) for layer in range(4) for key in range(62) if before[layer][key] != after[layer][key]]
-        self.assertEqual(differences, [(3, 54)])
+        differences = [(layer, key) for layer in range(3) for key in range(62) if before[layer][key] != after[layer][key]]
+        self.assertEqual(differences, [(1, 54)])
         def outside(source):
             spans = model.binding_spans(source)
             return "".join(source[a:b] for a,b in zip([0]+[x[1] for x in spans], [x[0] for x in spans]+[len(source)]))
@@ -136,7 +141,7 @@ class WorkspaceTests(unittest.TestCase):
         return result.stdout.strip()
 
     def payload(self):
-        config=copy.deepcopy(BASE_CONFIG);config['firmware']['layers'][3]['bindings'][54]='&mkp MCLK'
+        config=copy.deepcopy(BASE_CONFIG);config['firmware']['layers'][1]['bindings'][54]='&mkp MCLK'
         return {'config':config,'revision':self.workspace.revision(),'message':'Add middle click to a key'}
 
     def test_save_commits_generated_files_and_pushes_same_commit(self):
@@ -145,7 +150,7 @@ class WorkspaceTests(unittest.TestCase):
         self.assertTrue(result['pushed']);self.assertNotEqual(before,result['commit'])
         remote=subprocess.check_output(['git','--git-dir',str(self.workspace.bare),'rev-parse','refs/heads/'+server.BRANCH],text=True).strip()
         self.assertEqual(remote,result['commit'])
-        self.assertEqual(model.parse_keymap((self.root/model.KEYMAP).read_text())[3][54],'&mkp MCLK')
+        self.assertEqual(model.parse_keymap((self.root/model.KEYMAP).read_text())[1][54],'&mkp MCLK')
         self.assertFalse(self.workspace.state()['dirty'])
         self.assertFalse(self.workspace.state()['sourceDrift'])
 
