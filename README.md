@@ -84,6 +84,7 @@ Pressing Base Left+Right together sends middle click. The right thumb cluster ha
 | H / J / K / L | Left / Down / Up / Right |
 | Physical Left / Right arrows | Home / End |
 | Physical Up / Down arrows | Page Up / Page Down |
+| W / O | `(` / `)` |
 | E / R | `[` / `{` |
 | U / I | `}` / `]` |
 | N / M | Play or pause / Mute |
