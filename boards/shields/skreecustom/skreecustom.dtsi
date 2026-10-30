@@ -71,7 +71,7 @@
         status = "disabled";
         device = <&trackball_split>;
 
-        // Layer 3 is the scroll-mode toggle. While it is active the ball emits
+        // Layer 3 is held for scroll mode. While it is active the ball emits
         // wheel events instead of pointer motion. 1/64 keeps a 3200-CPI ball
         // from scrolling many notches for a tiny roll; tune the divisor here.
         scroller {

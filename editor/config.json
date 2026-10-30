@@ -128,7 +128,7 @@
           "&trans",
           "&trans",
           "&mkp MCLK",
-          "&tog 3",
+          "&mo 3",
           "&kp PG_UP",
           "&kp PG_DN",
           "&trans",
