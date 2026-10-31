@@ -67,12 +67,12 @@
           "&kp SPACE",
           "&kp BSPC",
           "&kp RGUI",
-          "&kp LALT",
+          "&kp DEL",
           "&kp LCTRL",
           "&mo 1",
           "&kp TAB",
           "&kp RET",
-          "&kp DEL"
+          "&kp LALT"
         ]
       },
       {

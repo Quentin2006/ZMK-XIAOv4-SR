@@ -36,7 +36,7 @@ History can load an earlier configuration as a draft; saving it creates a new co
 
 The editor intentionally uses a separate branch. Merge its pull request when ready; it does not automatically modify `main`.
 
-The base arrow cluster keeps Up/Down as arrows, while Left/Right are trackball clicks. Press Left+Right together for middle click. Enter and Delete are swapped on the right thumb cluster.
+The base arrow cluster keeps Up/Down as arrows, while Left/Right are trackball clicks. Press Left+Right together for middle click. The left thumb Alt position is Delete; the right thumb's former Delete position is Alt.
 
 ## What takes effect where
 
@@ -75,7 +75,7 @@ Use **Base**, one held **Fn** layer, and the unused historical layer. The right 
 | Up | Up arrow | Page Up |
 | Down | Down arrow | Page Down |
 
-Pressing Base Left+Right together sends middle click. The right thumb cluster has **Enter** on the middle key and **Delete** on the inner key.
+Pressing Base Left+Right together sends middle click. The left thumb **Alt** position is Delete; the right thumb cluster has **Enter** on the middle key and **Alt** on the inner key.
 
 | Hold Fn and press | Result |
 | --- | --- |
