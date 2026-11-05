@@ -1,18 +1,34 @@
 #include "skreecustom.dtsi"
 
+
  &default_transform {
     col-offset = <6>;
 };
 
-&kscan0 {
-    col-gpios           // SR 0-7
-        = <&shifter 0 GPIO_ACTIVE_HIGH>
-        , <&shifter 1 GPIO_ACTIVE_HIGH>
-        , <&shifter 2 GPIO_ACTIVE_HIGH>
-        , <&shifter 3 GPIO_ACTIVE_HIGH>
-        , <&shifter 4 GPIO_ACTIVE_HIGH>
-        , <&shifter 5 GPIO_ACTIVE_HIGH>
-//      , <&shifter 6 GPIO_ACTIVE_HIGH>
-//      , <&shifter 7 GPIO_ACTIVE_HIGH>
-        ;
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+&spi1 {
+    status = "okay";
+    cs-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+
+    trackball: trackball@0 {
+        status = "okay";
+        compatible = "pixart,pmw3610";
+        reg = <0>;
+        spi-max-frequency = <2000000>;
+        irq-gpios = <&gpio0 29 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+        cpi = <3200>;            // 200-3200 in steps of 200; raise for a faster pointer
+        // Orientation is done in the sensor hardware (same result as the old
+        // PMW3610_SWAP_XY + listener X/Y invert). Remove a line to flip that axis.
+        swap-xy;
+        invert-x;
+        invert-y;
+        evt-type = <INPUT_EV_REL>;
+        x-input-code = <INPUT_REL_X>;
+        y-input-code = <INPUT_REL_Y>;
+    };
+};
+
+// Forward trackball events to the left (central) half
+&trackball_split {
+    device = <&trackball>;
 };

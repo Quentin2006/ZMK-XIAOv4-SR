@@ -1,0 +1,18 @@
+name: Editor checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate generated configuration
+        run: python editor/configure.py --check
+      - name: Test configuration, Git saves, and rollback
+        run: python -m unittest discover -s editor -p 'test_*.py' -v
+      - name: Check browser script syntax
+        run: node --check editor/static/app.js

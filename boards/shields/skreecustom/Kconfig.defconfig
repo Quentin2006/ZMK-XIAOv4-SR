@@ -6,9 +6,6 @@ config ZMK_KEYBOARD_NAME
 config ZMK_SPLIT_ROLE_CENTRAL
     default y
 
-config ZMK_STUDIO
-  default y
-
 endif
 
 if SHIELD_SKREECUSTOM_LEFT || SHIELD_SKREECUSTOM_RIGHT
@@ -16,7 +13,27 @@ if SHIELD_SKREECUSTOM_LEFT || SHIELD_SKREECUSTOM_RIGHT
 config ZMK_SPLIT
     default y
 
+config ZMK_SLEEP
+    default y
+
+config ZMK_POINTING
+    default y
+
 config SPI
     default y
+
+config ZMK_RGB_UNDERGLOW
+    default y
+    imply WS2812_STRIP
+
+config ZMK_RGB_UNDERGLOW_EXT_POWER
+    default n
+
+config ZMK_KSCAN_MATRIX_WAIT_BEFORE_INPUTS
+    default 0
+
+config ZMK_KSCAN_MATRIX_WAIT_BETWEEN_OUTPUTS
+    default 1
+
 
 endif
