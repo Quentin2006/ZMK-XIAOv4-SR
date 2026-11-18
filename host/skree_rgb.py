@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Push a color to the Skree Custom keyboard's host-controlled RGB underglow.
 
-The matching firmware publishes a second HID interface (usage page 0xFF60,
-usage 0x61) over both USB and Bluetooth. BlueZ exposes that interface as a
-hidraw node alongside the keyboard's normal one; this finds it by its report
-descriptor rather than by number, so it survives reconnects.
+Over USB the color goes out the raw HID hidraw node (found by its report
+descriptor rather than by number, so it survives reconnects). Over Bluetooth,
+BlueZ claims every HID service, so this script falls back to writing the
+custom GATT characteristic c0de5001-5c3e-4b8a-9d4a-736b72656500 via busctl.
 """
 
 import argparse
@@ -12,6 +12,8 @@ import colorsys
 import glob
 import json
 import os
+import re
+import subprocess
 import sys
 
 MAGIC = b"SK"
@@ -22,6 +24,8 @@ REPORT_SIZE = 32
 USAGE_SIGNATURE = b"\x06\x60\xff\x09\x61"
 SKREE_VID_PID = ("1D50", "615E")
 STATE_FILE = os.path.expanduser("~/.local/state/skree-rgb.json")
+# Custom (non-HID) GATT characteristic the firmware publishes over Bluetooth.
+BLE_CHAR_UUID = "c0de5001-5c3e-4b8a-9d4a-736b72656500"
 
 
 def sysfs(path):
@@ -91,10 +95,9 @@ def report_from_hsb(hue, saturation, brightness=None):
     return bytes(report)
 
 
-def send_report(report):
+def send_hidraw(report, quiet=False):
     devices = list(raw_hid_devices())
     if not devices:
-        print("Skree raw HID interface not found (is it connected and paired?)", file=sys.stderr)
         return False
     for path in devices:
         try:
@@ -104,6 +107,76 @@ def send_report(report):
             print(f"failed to write {path}: {error}", file=sys.stderr)
             continue
         return True
+    return False
+
+
+def ble_characteristics():
+    try:
+        result = subprocess.run(
+            ["busctl", "--json=short", "call", "org.bluez", "/",
+             "org.freedesktop.DBus.ObjectManager", "GetManagedObjects"],
+            capture_output=True, text=True, timeout=5,
+        )
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
+        return []
+    if result.returncode != 0:
+        return []
+
+    try:
+        entries = json.loads(result.stdout)["data"]
+    except (ValueError, KeyError, TypeError):
+        return []
+
+    objects = {}
+    for entry in entries:
+        if isinstance(entry, dict):
+            objects.update(entry)
+
+    for path, interfaces in objects.items():
+        char = interfaces.get("org.bluez.GattCharacteristic1")
+        if char is None:
+            continue
+        if char.get("UUID", {}).get("data", "").lower() != BLE_CHAR_UUID:
+            continue
+        match = re.match(r"^(/org/bluez/hci\d+/dev_[0-9A-F_]+)", path)
+        if not match:
+            continue
+        device = match.group(1)
+        if objects.get(device, {}).get("org.bluez.Device1", {}).get(
+            "Connected", {}
+        ).get("data") is True:
+            yield path
+
+
+def send_ble(report):
+    payload = bytes(report)[:7]
+    for path in ble_characteristics():
+        command = [
+            "busctl", "call", "org.bluez", path,
+            "org.bluez.GattCharacteristic1", "WriteValue", "aya{sv}",
+            str(len(payload)),
+        ]
+        command.extend(str(byte) for byte in payload)
+        command.extend(["1", "type", "s", "request"])
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, timeout=5)
+        except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
+            continue
+        if result.returncode == 0:
+            return True
+        print(result.stderr, file=sys.stderr, end="")
+    return False
+
+
+def send_report(report):
+    if send_hidraw(report):
+        return True
+    if send_ble(report):
+        return True
+    print(
+        "Skree keyboard not reachable over USB raw HID or Bluetooth (is it connected?)",
+        file=sys.stderr,
+    )
     return False
 
 
