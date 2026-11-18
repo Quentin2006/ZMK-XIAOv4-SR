@@ -25,6 +25,10 @@ include:
   - board: seeeduino_xiao_ble
     shield: skreecustom_left raw_hid_adapter
   - board: seeeduino_xiao_ble
+    shield: skreecustom_left raw_hid_adapter
+    snippet: zmk-usb-logging
+    artifact-name: skreecustom_left_usblog
+  - board: seeeduino_xiao_ble
     shield: skreecustom_right
 #  - board: seeeduino_xiao_ble
 #    shield: settings_reset
