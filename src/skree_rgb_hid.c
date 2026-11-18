@@ -51,20 +51,33 @@ static int skree_rgb_hid_listener(const zmk_event_t *eh) {
         return ZMK_EV_EVENT_BUBBLE;
     }
 
-    struct zmk_behavior_binding binding = {
-        .behavior_dev = "rgb_ug",
-        .param1 = RGB_COLOR_HSB_CMD,
-        .param2 = RGB_COLOR_HSB_VAL(hue, saturation, brightness),
-    };
     struct zmk_behavior_binding_event binding_event = {
         .layer = 0,
         .position = 0,
         .timestamp = k_uptime_get(),
     };
 
-    int err = zmk_behavior_invoke_binding(&binding, binding_event, true);
+    struct zmk_behavior_binding color = {
+        .behavior_dev = "rgb_ug",
+        .param1 = RGB_COLOR_HSB_CMD,
+        .param2 = RGB_COLOR_HSB_VAL(hue, saturation, brightness),
+    };
+    int err = zmk_behavior_invoke_binding(&color, binding_event, true);
     if (err < 0) {
         LOG_ERR("Failed to apply host RGB color (%d)", err);
+        return ZMK_EV_EVENT_BUBBLE;
+    }
+
+    /* Spectrum/Swirl ignore the color. Force Solid (effect 0), which also
+       saves the new state to flash so it survives sleep and reboots. */
+    struct zmk_behavior_binding solid = {
+        .behavior_dev = "rgb_ug",
+        .param1 = RGB_EFS_CMD,
+        .param2 = 0,
+    };
+    err = zmk_behavior_invoke_binding(&solid, binding_event, true);
+    if (err < 0) {
+        LOG_ERR("Failed to force solid RGB effect (%d)", err);
     }
 
     return ZMK_EV_EVENT_BUBBLE;
