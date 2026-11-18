@@ -29,7 +29,7 @@ KEY_CODES = set(json.loads((ROOT / "editor/static/keycodes.json").read_text()))
 MODIFIERS = {"LC", "RC", "LS", "RS", "LA", "RA", "LG", "RG"}
 MOUSE_CODES = {"LCLK", "RCLK", "MCLK", "MB4", "MB5"}
 BT_ARGS = {"BT_CLR": 0, "BT_NXT": 0, "BT_PRV": 0, "BT_SEL": 1}
-RGB_CODES = {"RGB_TOG", "RGB_ON", "RGB_OFF", "RGB_EFF", "RGB_EFR", "RGB_HUI", "RGB_HUD", "RGB_SAI", "RGB_SAD", "RGB_BRI", "RGB_BRD", "RGB_SPI", "RGB_SPD"}
+RGB_CODES = {"RGB_TOG", "RGB_ON", "RGB_OFF", "RGB_EFF", "RGB_EFR", "RGB_HUI", "RGB_HUD", "RGB_SAI", "RGB_SAD", "RGB_BRI", "RGB_BRD", "RGB_SPI", "RGB_SPD", "RGB_COLOR_HSB(0,0,20)"}
 
 
 class Invalid(ValueError):
@@ -136,9 +136,9 @@ def parse_keymap(source):
     result = []
     for start, end in binding_spans(source):
         body = re.sub(r"/\*.*?\*/|//[^\n]*", " ", source[start:end], flags=re.S)
-        bindings = re.findall(r"&[a-z_]+(?:\s+(?!&)[A-Z0-9_()]+)*", body)
+        bindings = re.findall(r"&[a-z_]+(?:\s+(?!&)[A-Z0-9_(),]+)*", body)
         require(len(bindings) == 62, "Expected 62 bindings in each vendor layer.")
-        require(not re.sub(r"&[a-z_]+(?:\s+(?!&)[A-Z0-9_()]+)*", "", body).strip(), "Unrecognized keymap syntax.")
+        require(not re.sub(r"&[a-z_]+(?:\s+(?!&)[A-Z0-9_(),]+)*", "", body).strip(), "Unrecognized keymap syntax.")
         result.append([validate_binding(x) for x in bindings])
     return result
 

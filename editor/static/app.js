@@ -10,7 +10,7 @@ const shifted = {"1":"!","2":"@","3":"#","4":"$","5":"%","6":"^","7":"&","8":"*"
 const behaviors = {kp:"Type a key",mo:"Hold a layer",to:"Switch layer",tog:"Toggle layer",mkp:"Mouse button",trans:"Transparent",none:"Disabled",bt:"Bluetooth",rgb_ug:"Lighting",bootloader:"Bootloader",sys_reset:"Restart"};
 const mouseNames = {LCLK:"Left click",RCLK:"Right click",MCLK:"Middle click",MB4:"Back",MB5:"Forward"};
 const mouseShort = {LCLK:"L click",RCLK:"R click",MCLK:"M click",MB4:"Back",MB5:"Fwd"};
-const rgbNames = {RGB_TOG:"Toggle lighting",RGB_ON:"Lighting on",RGB_OFF:"Lighting off",RGB_EFF:"Next effect",RGB_EFR:"Previous effect",RGB_HUI:"Hue +",RGB_HUD:"Hue −",RGB_SAI:"Saturation +",RGB_SAD:"Saturation −",RGB_BRI:"Brightness +",RGB_BRD:"Brightness −",RGB_SPI:"Effect speed +",RGB_SPD:"Effect speed −"};
+const rgbNames = {RGB_TOG:"Toggle lighting",RGB_ON:"Lighting on",RGB_OFF:"Lighting off",RGB_EFF:"Next effect",RGB_EFR:"Previous effect",RGB_HUI:"Hue +",RGB_HUD:"Hue −",RGB_SAI:"Saturation +",RGB_SAD:"Saturation −",RGB_BRI:"Brightness +",RGB_BRD:"Brightness −",RGB_SPI:"Effect speed +",RGB_SPD:"Effect speed −","RGB_COLOR_HSB(0,0,20)":"Dim white (one press)"};
 const titles = {keyboard:["Keyboard","Select a key to change what it does."],trackball:["Trackball","Tune movement and scrolling. Save to apply on this computer."],history:["History","Your configuration, versioned in Git."]};
 const settingNames = {swapSlashes:"Slash / backslash swap",holdToScroll:"Hold to scroll",scrollButton:"Scroll button",middleClick:"Middle click",scrollFactor:"Scroll speed",naturalScroll:"Natural scrolling",sensitivity:"Sensitivity",accelProfile:"Acceleration",declaredCpi:"Desktop sensor resolution",cpi:"Firmware sensor resolution"};
 
