@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .local-state/
 .editor-test/
+
+# Downloaded build artifacts
+firmware/
