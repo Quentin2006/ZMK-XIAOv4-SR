@@ -7,17 +7,18 @@
  * Report layout (CONFIG_RAW_HID_REPORT_SIZE = 32, unused bytes ignored):
  *   byte 0: 'S' (0x53)
  *   byte 1: 'K' (0x4B)
- *   byte 2: command 0x01 = set HSB
+ *   byte 2: command 0x01 = set HSB, 0x02 = set hue/saturation only
  *   byte 3: hue high byte (0-359)
  *   byte 4: hue low byte
  *   byte 5: saturation (0-100)
- *   byte 6: brightness (0-100)
+ *   byte 6: brightness (0-100, command 0x01 only)
  */
 
 #include <dt-bindings/zmk/rgb.h>
 
 #include <zmk/behavior.h>
 #include <zmk/event_manager.h>
+#include <zmk/rgb_underglow.h>
 
 #include <raw_hid/events.h>
 
@@ -29,6 +30,7 @@ LOG_MODULE_REGISTER(skree_rgb_hid);
 #define SKREE_RGB_MAGIC_0 0x53
 #define SKREE_RGB_MAGIC_1 0x4B
 #define SKREE_RGB_CMD_SET_HSB 0x01
+#define SKREE_RGB_CMD_SET_HS 0x02
 
 static int skree_rgb_hid_listener(const zmk_event_t *eh) {
     const struct raw_hid_received_event *event = as_raw_hid_received_event(eh);
@@ -37,18 +39,29 @@ static int skree_rgb_hid_listener(const zmk_event_t *eh) {
     }
 
     const uint8_t *data = event->data;
-    if (data[0] != SKREE_RGB_MAGIC_0 || data[1] != SKREE_RGB_MAGIC_1 ||
-        data[2] != SKREE_RGB_CMD_SET_HSB) {
+    if (data[0] != SKREE_RGB_MAGIC_0 || data[1] != SKREE_RGB_MAGIC_1) {
+        return ZMK_EV_EVENT_BUBBLE;
+    }
+    if (data[2] != SKREE_RGB_CMD_SET_HSB && data[2] != SKREE_RGB_CMD_SET_HS) {
         return ZMK_EV_EVENT_BUBBLE;
     }
 
     uint16_t hue = ((uint16_t)data[3] << 8) | data[4];
     uint8_t saturation = data[5];
-    uint8_t brightness = data[6];
-
-    if (hue > 360 || saturation > 100 || brightness > 100) {
-        LOG_WRN("Ignoring out-of-range RGB report (%u, %u, %u)", hue, saturation, brightness);
+    if (hue > 360 || saturation > 100) {
+        LOG_WRN("Ignoring out-of-range RGB report (%u, %u)", hue, saturation);
         return ZMK_EV_EVENT_BUBBLE;
+    }
+
+    uint8_t brightness;
+    if (data[2] == SKREE_RGB_CMD_SET_HSB) {
+        brightness = data[6];
+        if (brightness > 100) {
+            return ZMK_EV_EVENT_BUBBLE;
+        }
+    } else {
+        /* Keep whatever the user last set with Fn+Tab / Fn+Ctrl+Tab. */
+        brightness = zmk_rgb_underglow_calc_brt(0).b;
     }
 
     struct zmk_behavior_binding_event binding_event = {

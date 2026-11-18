@@ -1,0 +1,8 @@
+# Copyright (c) 2026 The Skree Contributors
+# SPDX-License-Identifier: MIT
+
+description: Step the Skree RGB underglow brightness, wrapping at the ends
+
+compatible: "zmk,behavior-skree-brightness"
+
+include: one_param.yaml

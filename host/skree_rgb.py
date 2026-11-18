@@ -16,6 +16,7 @@ import sys
 
 MAGIC = b"SK"
 CMD_SET_HSB = 0x01
+CMD_SET_HS = 0x02
 REPORT_SIZE = 32
 # Usage page 0xFF60 (2-byte item), usage 0x61 - unique to the raw HID adapter.
 USAGE_SIGNATURE = b"\x06\x60\xff\x09\x61"
@@ -72,16 +73,21 @@ def build_report(value, brightness):
     return bytes(report), (hue, saturation, level)
 
 
-def report_from_hsb(hue, saturation, brightness):
-    if not 0 <= hue <= 360 or not 0 <= saturation <= 100 or not 0 <= brightness <= 100:
+def report_from_hsb(hue, saturation, brightness=None):
+    if not 0 <= hue <= 360 or not 0 <= saturation <= 100:
         raise ValueError("color is out of range")
     report = bytearray(REPORT_SIZE)
     report[0:2] = MAGIC
-    report[2] = CMD_SET_HSB
+    if brightness is None:
+        report[2] = CMD_SET_HS
+    else:
+        if not 0 <= brightness <= 100:
+            raise ValueError("brightness is out of range")
+        report[2] = CMD_SET_HSB
+        report[6] = brightness
     report[3] = hue >> 8
     report[4] = hue & 0xFF
     report[5] = saturation
-    report[6] = brightness
     return bytes(report)
 
 
@@ -141,6 +147,10 @@ def main():
         "--step", type=int, metavar="N",
         help="instead of setting a color, advance brightness by N percent (wrap at 100)",
     )
+    parser.add_argument(
+        "--keep-brightness", action="store_true",
+        help="apply only the color's hue/saturation; leave brightness on the keyboard alone",
+    )
     args = parser.parse_args()
 
     if args.step is not None:
@@ -151,12 +161,18 @@ def main():
         parser.error("give a color or --step")
     if not 0 <= args.brightness <= 100:
         parser.error("--brightness must be between 0 and 100")
-    report, hsb = build_report(args.color, args.brightness)
+
+    hue, saturation, level = hex_to_hsb(args.color, 100)
+    hsb = (hue, saturation, level)
+    if args.keep_brightness:
+        report = report_from_hsb(hue, saturation)
+    else:
+        report = report_from_hsb(hue, saturation, round(level * args.brightness / 100))
 
     if not send_report(report):
         return 1
     save_state(hsb)
-    print(f"sent {args.color} as HSB{hsb}")
+    print(f"sent {args.color} as HSB{hsb}" + (" (brightness kept)" if args.keep_brightness else ""))
     return 0
 
 

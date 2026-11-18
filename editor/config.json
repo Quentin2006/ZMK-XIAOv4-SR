@@ -91,7 +91,7 @@
           "&kp F9",
           "&kp F10",
           "&kp F12",
-          "&rgb_ug RGB_COLOR_HSB(0,0,20)",
+          "&skree_brt 1",
           "&rgb_ug RGB_BRD",
           "&trans",
           "&trans",

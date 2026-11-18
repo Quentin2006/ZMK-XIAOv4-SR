@@ -4,3 +4,5 @@ zephyr_library()
 if(CONFIG_RAW_HID)
   zephyr_library_sources(src/skree_rgb_hid.c)
 endif()
+
+zephyr_library_sources(src/skree_brightness_behavior.c)
