@@ -1,6 +1,14 @@
 #include <dt-bindings/zmk/matrix_transform.h>
 
  / {
+     behaviors {
+        skree_brt: skree_brt {
+            compatible = "zmk,behavior-skree-brightness";
+            #binding-cells = <1>;
+            display-name = "RGB brightness step";
+        };
+     };
+
      chosen {
         zmk,kscan = &kscan0;
         zmk,matrix_transform = &default_transform;

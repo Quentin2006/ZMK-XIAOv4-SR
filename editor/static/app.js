@@ -7,7 +7,7 @@ let state, draft, geometry, catalog, layer = 0, selected = 0, view = "keyboard",
 const storageKey = "skree-control-draft-v1";
 const symbols = {ESC:"Esc",TAB:"Tab",LSHFT:"Shift",RSHFT:"Shift",LCTRL:"Ctrl",RCTRL:"Ctrl",LALT:"Alt",RALT:"Alt",LGUI:"Super",RGUI:"Super",SPACE:"Space",BSPC:"Bksp",RET:"Enter",DEL:"Del",GRAVE:"`",EQUAL:"=",MINUS:"−",SEMI:";",SQT:"'",COMMA:",",DOT:".",FSLH:"/",BSLH:"\\",LBKT:"[",RBKT:"]",LEFT:"←",RIGHT:"→",UP:"↑",DOWN:"↓",CAPS:"Caps",HOME:"Home",END:"End",PG_UP:"PgUp",PG_DN:"PgDn",INS:"Ins"};
 const shifted = {"1":"!","2":"@","3":"#","4":"$","5":"%","6":"^","7":"&","8":"*","9":"(","0":")","=":"+","−":"_",";":":","'":'"',"`":"~",",":"<",".":">","/":"?","\\":"|","[":"{","]":"}"};
-const behaviors = {kp:"Type a key",mo:"Hold a layer",to:"Switch layer",tog:"Toggle layer",mkp:"Mouse button",trans:"Transparent",none:"Disabled",bt:"Bluetooth",rgb_ug:"Lighting",bootloader:"Bootloader",sys_reset:"Restart"};
+const behaviors = {kp:"Type a key",mo:"Hold a layer",to:"Switch layer",tog:"Toggle layer",mkp:"Mouse button",trans:"Transparent",none:"Disabled",bt:"Bluetooth",rgb_ug:"Lighting",skree_brt:"Brightness step",bootloader:"Bootloader",sys_reset:"Restart"};
 const mouseNames = {LCLK:"Left click",RCLK:"Right click",MCLK:"Middle click",MB4:"Back",MB5:"Forward"};
 const mouseShort = {LCLK:"L click",RCLK:"R click",MCLK:"M click",MB4:"Back",MB5:"Fwd"};
 const rgbNames = {RGB_TOG:"Toggle lighting",RGB_ON:"Lighting on",RGB_OFF:"Lighting off",RGB_EFF:"Next effect",RGB_EFR:"Previous effect",RGB_HUI:"Hue +",RGB_HUD:"Hue −",RGB_SAI:"Saturation +",RGB_SAD:"Saturation −",RGB_BRI:"Brightness +",RGB_BRD:"Brightness −",RGB_SPI:"Effect speed +",RGB_SPD:"Effect speed −","RGB_COLOR_HSB(0,0,20)":"Dim white (one press)"};
@@ -53,6 +53,7 @@ function labelFor(binding,short=false) {
   if(behavior==="&sys_reset")return "Reset";
   if(behavior==="&bt")return {BT_CLR:"BT clear",BT_NXT:"BT next",BT_PRV:"BT prev",BT_SEL:`BT ${Number(extra)+1}`}[arg]||"BT";
   if(behavior==="&rgb_ug")return {RGB_TOG:"RGB on/off",RGB_EFF:"RGB next",RGB_EFR:"RGB prev"}[arg]||rgbNames[arg]||"RGB";
+  if(behavior==="&skree_brt")return {1:"Brightness up",2:"Brightness down"}[arg]||"Brightness";
   return binding;
 }
 function locationFor(index) {
@@ -97,6 +98,7 @@ function renderInspector() {
   if(["mo","to","tog"].includes(kind))args=`<label class="field-label" for="binding-value">Layer</label><select id="binding-value">${draft.firmware.layers.map((l,i)=>option(String(i),`${i} · ${l.name}`)).join("")}</select>`;
   if(kind==="mkp")args=`<label class="field-label" for="binding-value">Mouse button</label><select id="binding-value">${Object.entries(mouseNames).map(([code,name])=>option(code,name)).join("")}</select>`;
   if(kind==="rgb_ug")args=`<label class="field-label" for="binding-value">Lighting action</label><select id="binding-value">${catalog.rgb.map(code=>option(code,rgbNames[code]||code)).join("")}</select>`;
+  if(kind==="skree_brt")args=`<label class="field-label" for="binding-value">Direction</label><select id="binding-value">${option("1","Brightness up")}${option("2","Brightness down")}</select>`;
   if(kind==="bt")args=`<label class="field-label" for="binding-value">Bluetooth action</label><select id="binding-value">${Object.entries({BT_NXT:"Next profile",BT_PRV:"Previous profile",BT_CLR:"Clear current pairing",BT_SEL:"Choose profile"}).map(([code,name])=>option(code,name)).join("")}</select>${arg==="BT_SEL"?`<label class="field-label" for="bt-profile">Profile</label><select id="bt-profile">${[0,1,2,3,4].map(i=>`<option value="${i}" ${String(i)===extra?"selected":""}>Profile ${i+1}</option>`).join("")}</select>`:""}`;
   $("#binding-arguments").innerHTML=args;
   $("#binding-source").textContent=binding;
@@ -218,7 +220,7 @@ async function start() {
   }catch(error){showError("Could not load the local repository. "+error.message);$("#save-state").textContent="Connection unavailable";$("#review").disabled=true;return;}
   $$(".nav-item").forEach(button=>button.addEventListener("click",()=>switchView(button.dataset.view)));
   $("#show-all-layers").addEventListener("change",()=>{if(layer===2&&!$("#show-all-layers").checked)layer=0;renderKeyboard();renderInspector();});
-  $("#behavior").addEventListener("change",event=>{const kind=event.target.value;assign({kp:"&kp A",mo:"&mo 1",to:"&to 0",tog:"&tog 1",mkp:"&mkp MCLK",trans:"&trans",none:"&none",bt:"&bt BT_NXT",rgb_ug:"&rgb_ug RGB_TOG",bootloader:"&bootloader",sys_reset:"&sys_reset"}[kind]);});
+  $("#behavior").addEventListener("change",event=>{const kind=event.target.value;assign({kp:"&kp A",mo:"&mo 1",to:"&to 0",tog:"&tog 1",mkp:"&mkp MCLK",trans:"&trans",none:"&none",bt:"&bt BT_NXT",rgb_ug:"&rgb_ug RGB_TOG",skree_brt:"&skree_brt 1",bootloader:"&bootloader",sys_reset:"&sys_reset"}[kind]);});
   $("#reset-key").addEventListener("click",()=>assign(state.config.firmware.layers[layer].bindings[selected]));
   $$("[data-setting]").forEach(input=>input.addEventListener(input.type==="range"?"input":"change",()=>{draft.hyprland[input.dataset.setting]=input.type==="checkbox"?input.checked:input.type==="range"||input.dataset.setting==="declaredCpi"?Number(input.value):input.value;changed();if(input.dataset.setting==="declaredCpi")renderSettings();if(input.dataset.setting==="accelProfile"||input.dataset.setting==="sensitivity")renderAccelerationHint();if(input.dataset.setting==="scrollFactor")$("#scroll-factor-value").textContent=Number(input.value).toFixed(1)+"×";if(input.dataset.setting==="sensitivity")$("#sensitivity-value").textContent=Number(input.value).toFixed(2);}));
   $("#sensor-cpi").addEventListener("change",event=>{draft.firmware.trackball.cpi=Number(event.target.value);changed();});
