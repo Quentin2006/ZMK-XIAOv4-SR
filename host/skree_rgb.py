@@ -186,29 +186,6 @@ def save_state(hsb):
         json.dump({"h": hsb[0], "s": hsb[1], "b": hsb[2]}, handle)
 
 
-def load_state():
-    try:
-        with open(STATE_FILE) as handle:
-            state = json.load(handle)
-        hsb = (state["h"], state["s"], state["b"])
-        if 0 <= hsb[0] <= 360 and 0 <= hsb[1] <= 100 and 0 <= hsb[2] <= 100:
-            return hsb
-    except (OSError, ValueError, KeyError, TypeError):
-        pass
-    return (0, 0, 20)
-
-
-def step_brightness(step=10):
-    """Advance brightness by step percent, wrapping around at 100."""
-    hue, saturation, brightness = load_state()
-    brightness = (brightness + step) % 101
-    if send_report(report_from_hsb(hue, saturation, brightness)):
-        save_state((hue, saturation, brightness))
-        print(f"brightness {brightness}% (HSB{(hue, saturation, brightness)})", flush=True)
-        return brightness
-    return None
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("color", nargs="?", help="color as #RRGGBB")
@@ -217,21 +194,13 @@ def main():
         help="cap brightness at this percent (default: 35, a dim backlight)",
     )
     parser.add_argument(
-        "--step", type=int, metavar="N",
-        help="instead of setting a color, advance brightness by N percent (wrap at 100)",
-    )
-    parser.add_argument(
         "--keep-brightness", action="store_true",
         help="apply only the color's hue/saturation; leave brightness on the keyboard alone",
     )
     args = parser.parse_args()
 
-    if args.step is not None:
-        result = step_brightness(args.step)
-        return 0 if result is not None else 1
-
     if not args.color:
-        parser.error("give a color or --step")
+        parser.error("give a color")
     if not 0 <= args.brightness <= 100:
         parser.error("--brightness must be between 0 and 100")
 

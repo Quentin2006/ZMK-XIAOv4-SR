@@ -73,9 +73,6 @@ def validate_binding(binding):
         require(len(args) == 1 and args[0] in MOUSE_CODES, "Choose a supported mouse button.")
     elif behavior == "rgb_ug":
         require(len(args) == 1 and args[0] in RGB_CODES, "Choose a supported lighting action.")
-    elif behavior == "skree_brt":
-        require(len(args) == 1 and args[0] in {"1", "2"},
-                "Choose brightness up (1) or down (2).")
     elif behavior == "bt":
         require(bool(args) and args[0] in BT_ARGS and len(args) == 1 + BT_ARGS[args[0]], "Choose a supported Bluetooth action.")
         if args[0] == "BT_SEL":
