@@ -1,8 +1,8 @@
 /*
  * Brightness stepping behavior for the Skree Custom.
  *
- * &skree_brt 1 -> increase by 10%, wrapping 100 -> 0
- * &skree_brt 2 -> decrease by 10%, wrapping 0 -> 100
+ * &skree_brt 1 -> increase by 10%, capped at 100
+ * &skree_brt 2 -> decrease by 10%, floored at 0
  *
  * The current level is read from ZMK's underglow state, so it stays in sync
  * with colors pushed from the host. Selecting Solid also saves the state.
@@ -32,15 +32,19 @@ static int on_pressed(struct zmk_behavior_binding *binding,
     if (binding->param1 == 2) {
         level -= SKREE_BRT_STEP;
         if (level < 0) {
-            level = 100;
+            level = 0;
         }
     } else {
         level += SKREE_BRT_STEP;
         if (level > 100) {
-            level = 0;
+            level = 100;
         }
     }
     color.b = (uint8_t)level;
+
+    /* Make sure both halves are actually lit (a saved "off" state on the
+       peripheral otherwise makes the change invisible there). */
+    zmk_rgb_underglow_on();
 
     int err = zmk_rgb_underglow_set_hsb(color);
     if (err < 0) {

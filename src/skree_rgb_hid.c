@@ -70,6 +70,13 @@ static int skree_rgb_hid_listener(const zmk_event_t *eh) {
         .timestamp = k_uptime_get(),
     };
 
+    /* Ensure both halves are lit even if one saved an "off" state. */
+    struct zmk_behavior_binding on = {
+        .behavior_dev = "rgb_ug",
+        .param1 = RGB_ON_CMD,
+    };
+    zmk_behavior_invoke_binding(&on, binding_event, true);
+
     struct zmk_behavior_binding color = {
         .behavior_dev = "rgb_ug",
         .param1 = RGB_COLOR_HSB_CMD,
