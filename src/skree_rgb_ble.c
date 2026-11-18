@@ -30,7 +30,7 @@ static struct bt_uuid_128 skree_rgb_char_uuid = BT_UUID_INIT_128(
 
 static uint8_t pending[SKREE_RGB_BLE_MAX_LEN];
 static size_t pending_len;
-static K_SPINLOCK_DEFINE(pending_lock);
+static struct k_spinlock pending_lock;
 
 static void skree_rgb_ble_work_handler(struct k_work *work) {
     uint8_t data[SKREE_RGB_BLE_MAX_LEN];
