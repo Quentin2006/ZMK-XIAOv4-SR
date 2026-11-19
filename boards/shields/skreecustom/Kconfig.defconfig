@@ -29,6 +29,9 @@ config ZMK_RGB_UNDERGLOW
 config ZMK_RGB_UNDERGLOW_EXT_POWER
     default n
 
+config ZMK_RGB_UNDERGLOW_AUTO_OFF_IDLE
+    default y
+
 config ZMK_KSCAN_MATRIX_WAIT_BEFORE_INPUTS
     default 0
 

@@ -15,6 +15,7 @@ import os
 import re
 import subprocess
 import sys
+import tomllib
 
 MAGIC = b"SK"
 CMD_SET_HSB = 0x01
@@ -26,6 +27,19 @@ SKREE_VID_PID = ("1D50", "615E")
 STATE_FILE = os.path.expanduser("~/.local/state/skree-rgb.json")
 # Custom (non-HID) GATT characteristic the firmware publishes over Bluetooth.
 BLE_CHAR_UUID = "c0de5001-5c3e-4b8a-9d4a-736b72656500"
+
+# Saturation floor below which --vivid treats an accent as grayish, and the
+# saturation a vivid color is punched up to.
+GRAYISH_SATURATION = 25
+VIVID_SATURATION = 75
+
+# Color entries of an Omarchy colors.toml, in no particular order: the indexed
+# colorN form, plus the named keys Omarchy themes actually use.
+PALETTE_COLOR_KEYS = [f"color{i}" for i in range(16)] + [
+    "red", "yellow", "orange", "green", "cyan", "blue", "magenta", "brown",
+    "bright_red", "bright_yellow", "bright_green", "bright_cyan",
+    "bright_blue", "bright_magenta",
+]
 
 
 def sysfs(path):
@@ -61,6 +75,48 @@ def hex_to_hsb(value, brightness):
         round(saturation * 100),
         round(value_brightness * brightness),
     )
+
+
+def most_saturated_palette_color(path):
+    """(hue, saturation) of the most saturated color in a palette, or None.
+
+    Reads the colorN and named color entries of an Omarchy colors.toml; a
+    missing or unparsable palette simply yields None.
+    """
+    if not path:
+        return None
+    try:
+        with open(path, "rb") as handle:
+            data = tomllib.load(handle)
+    except (OSError, ValueError):
+        return None
+    best = None
+    for key in PALETTE_COLOR_KEYS:
+        value = data.get(key)
+        if not isinstance(value, str):
+            continue
+        try:
+            hue, saturation, _ = hex_to_hsb(value, 100)
+        except ValueError:
+            continue
+        if best is None or saturation > best[1]:
+            best = (hue, saturation)
+    return best
+
+
+def vivid_hsb(hue, saturation, palette_path):
+    """Vivid variant of a color: same hue with the saturation punched up.
+
+    Grayish accents (saturation below 25) borrow the hue of the most
+    saturated palette color instead, or fall back to soft white when no
+    palette color is saturated enough.
+    """
+    if saturation >= GRAYISH_SATURATION:
+        return hue, VIVID_SATURATION
+    pick = most_saturated_palette_color(palette_path)
+    if pick is not None and pick[1] >= GRAYISH_SATURATION:
+        return pick[0], VIVID_SATURATION
+    return hue, 0
 
 
 def build_report(value, brightness):
@@ -197,6 +253,19 @@ def main():
         "--keep-brightness", action="store_true",
         help="apply only the color's hue/saturation; leave brightness on the keyboard alone",
     )
+    parser.add_argument(
+        "--vivid", action="store_true",
+        help="punch saturation up to 75; grayish accents borrow the hue of the "
+             "most saturated color in --palette (soft white if none applies)",
+    )
+    parser.add_argument(
+        "--palette", metavar="PATH",
+        help="Omarchy colors.toml consulted by --vivid for grayish accents",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="print what would be sent instead of sending it (state file untouched)",
+    )
     args = parser.parse_args()
 
     if not args.color:
@@ -205,11 +274,21 @@ def main():
         parser.error("--brightness must be between 0 and 100")
 
     hue, saturation, level = hex_to_hsb(args.color, 100)
+    if args.vivid:
+        hue, saturation = vivid_hsb(hue, saturation, args.palette)
     hsb = (hue, saturation, level)
     if args.keep_brightness:
         report = report_from_hsb(hue, saturation)
     else:
         report = report_from_hsb(hue, saturation, round(level * args.brightness / 100))
+
+    if args.dry_run:
+        if args.keep_brightness:
+            print(f"dry-run: would send hue {hue}, saturation {saturation}, brightness kept")
+        else:
+            print(f"dry-run: would send hue {hue}, saturation {saturation}, "
+                  f"brightness {round(level * args.brightness / 100)}")
+        return 0
 
     if not send_report(report):
         return 1
