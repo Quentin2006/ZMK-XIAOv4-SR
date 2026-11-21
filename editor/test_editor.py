@@ -52,7 +52,7 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(len(set(coordinates)), 62)
 
     def test_source_injection_and_invalid_bindings_rejected(self):
-        for bad in ["&kp A>; / { injected = <1>; };", "&kp A\n&bootloader", "&mo 10", "&mkp BAD", "&bt BT_SEL 8", "&exec touch", "&kp LC(C))"]:
+        for bad in ["&kp A>; / { injected = <1>; };", "&kp A\n&bootloader", "&mo 10", "&mkp BAD", "&bt BT_SEL 8", "&exec touch", "&kp LC(C))", "&rgb_ug RGB_TOG", "&skree_brt 1"]:
             with self.subTest(binding=bad), self.assertRaises(model.Invalid):
                 model.validate_binding(bad)
         self.assertEqual(model.validate_binding("&kp LC(LS(C))"), "&kp LC(LS(C))")

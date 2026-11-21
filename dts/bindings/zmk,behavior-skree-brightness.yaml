@@ -1,6 +1,0 @@
-# SPDX-License-Identifier: MIT
-description: Skree RGB brightness step (fine steps below 10%)
-
-compatible: "zmk,behavior-skree-brightness"
-
-include: one_param.yaml

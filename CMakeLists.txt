@@ -1,23 +1,8 @@
 zephyr_library()
 
-# Host-controlled RGB lives on the central (left) half; it forwards changes to
-# the peripheral through ZMK's global rgb_ug behavior.
-if(CONFIG_RAW_HID OR CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-  zephyr_library_include_directories(src)
-  zephyr_library_sources(src/skree_rgb.c)
-endif()
-
-# USB transport: raw HID (central only; the peripheral has no HID endpoint).
-if(CONFIG_RAW_HID)
-  zephyr_library_sources(src/skree_rgb_hid.c)
-endif()
-
-# Bluetooth transport: custom GATT service, central only.
-if(CONFIG_ZMK_SPLIT_ROLE_CENTRAL AND CONFIG_ZMK_BLE)
-  zephyr_library_sources(src/skree_rgb_ble.c)
-endif()
-
-# Fine-grained brightness keys (central only; drive both halves via rgb_ug).
-if(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-  zephyr_library_sources(src/skree_brightness_behavior.c)
+# Split-link rate watchdog. Central (left) half only: it notices when the
+# trackball reports forwarded from the right half drop to every other radio
+# event and re-times the split link. See src/skree_link_watchdog.c.
+if(CONFIG_SKREE_LINK_WATCHDOG)
+  zephyr_library_sources(src/skree_link_watchdog.c)
 endif()

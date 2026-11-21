@@ -29,7 +29,6 @@ KEY_CODES = set(json.loads((ROOT / "editor/static/keycodes.json").read_text()))
 MODIFIERS = {"LC", "RC", "LS", "RS", "LA", "RA", "LG", "RG"}
 MOUSE_CODES = {"LCLK", "RCLK", "MCLK", "MB4", "MB5"}
 BT_ARGS = {"BT_CLR": 0, "BT_NXT": 0, "BT_PRV": 0, "BT_SEL": 1}
-RGB_CODES = {"RGB_TOG", "RGB_ON", "RGB_OFF", "RGB_EFF", "RGB_EFR", "RGB_HUI", "RGB_HUD", "RGB_SAI", "RGB_SAD", "RGB_BRI", "RGB_BRD", "RGB_SPI", "RGB_SPD", "RGB_COLOR_HSB(0,0,20)"}
 
 
 class Invalid(ValueError):
@@ -71,11 +70,6 @@ def validate_binding(binding):
         require(not args, "This behavior takes no arguments.")
     elif behavior == "mkp":
         require(len(args) == 1 and args[0] in MOUSE_CODES, "Choose a supported mouse button.")
-    elif behavior == "rgb_ug":
-        require(len(args) == 1 and args[0] in RGB_CODES, "Choose a supported lighting action.")
-    elif behavior == "skree_brt":
-        require(len(args) == 1 and args[0] in {"1", "2"},
-                "Choose brightness up (1) or down (2).")
     elif behavior == "bt":
         require(bool(args) and args[0] in BT_ARGS and len(args) == 1 + BT_ARGS[args[0]], "Choose a supported Bluetooth action.")
         if args[0] == "BT_SEL":

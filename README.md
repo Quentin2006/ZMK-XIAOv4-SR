@@ -25,7 +25,7 @@ For a temporary foreground session, stop the service first and run `python3 edit
 
 ## Edit and save
 
-1. Select a layer and a physical key. Choose a key, modifier expression such as `LC(C)`, layer action, mouse button, Bluetooth action, or lighting action. You can also record a single physical key.
+1. Select a layer and a physical key. Choose a key, modifier expression such as `LC(C)`, layer action, mouse button, or Bluetooth action. You can also record a single physical key.
 2. Adjust Trackball preferences or expand **Desktop keyboard preferences** below the keymap. Sensor resolution is under **Advanced sensor settings**. Unsaved drafts stay in your browser.
 3. Choose **Review changes**, then **Save & apply**. This commits and pushes to `skree-control-panel` in `Quentin2006/ZMK-XIAOv4-SR` and applies saved Hyprland preferences in the same action. Git details, an editable commit message, and exact file diffs are available inside the review dialog.
 4. Key assignments and firmware sensor settings still need a build and flash. The system DPI declaration still needs the separate installer below.
@@ -63,6 +63,12 @@ This backs up any previous managed declaration, rebuilds the system hardware dat
 The baseline desktop profile retains the existing slash swap and right-button hold-to-scroll. Left+right mouse-button emulation is optional. **Right-click + Backspace is not implemented as a desktop chord.** Middle click is provided by the Base Left+Right arrow chord.
 
 Desktop apply backs up `input.lua`, the managed module, and the XKB map in ignored `.local-state/desktop-backups/`. It migrates the two prior Skree blocks to `require("hypr.skree-control")`, preserves other settings, compiles the XKB map, reloads Hyprland, and checks configuration errors. Failure restores the previous files and reloads them. No firmware is flashed by the site.
+
+## Split link rate watchdog
+
+The left half runs two 7.5 ms Bluetooth links on one radio: it is a peripheral to the host and the central to the right half. When the two links' connection events overlap, the radio serves only one per slot, so the right half's trackball reports arrive in pairs every other event (about 15 ms apart) and the pointer stutters until one of the links reconnects. The left half now notices that pattern and re-times the split link by itself: it watches the arrival times of the split trackball reports and, when more than 35% of a 40-report window arrives within 2 ms of the previous report, changes the split link's connection interval (8.75 ms, then 7.5 ms again about 150 ms later) so its events land in different slots. If three interval changes in a row do not help, it disconnects the split link once so ZMK reconnects the halves with fresh timing, at most once a minute. Nothing runs while the ball is idle, so battery life is unaffected, and the host link's interval is checked once, 10 s after it connects.
+
+The watchdog lives in `src/skree_link_watchdog.c`, builds on the left half only, and is switched by `CONFIG_SKREE_LINK_WATCHDOG` (default on). Every action is logged at INF level, so the USB-logging left build shows it firing.
 
 ## Current keyboard profile
 

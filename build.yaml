@@ -23,9 +23,9 @@ include:
 #   - board: nice_nano
 #     shield: lily58_right
   - board: seeeduino_xiao_ble
-    shield: skreecustom_left raw_hid_adapter
+    shield: skreecustom_left
   - board: seeeduino_xiao_ble
-    shield: skreecustom_left raw_hid_adapter
+    shield: skreecustom_left
     snippet: zmk-usb-logging
     artifact-name: skreecustom_left_usblog
   - board: seeeduino_xiao_ble

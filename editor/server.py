@@ -234,7 +234,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/state":
                 return self.respond(self.workspace.state())
             if path == "/api/catalog":
-                return self.respond({"keycodes": sorted(model.KEY_CODES), "mouse": sorted(model.MOUSE_CODES), "rgb": sorted(model.RGB_CODES)})
+                return self.respond({"keycodes": sorted(model.KEY_CODES), "mouse": sorted(model.MOUSE_CODES)})
             allowed = {"/": ("index.html", "text/html; charset=utf-8"), "/app.js": ("app.js", "text/javascript; charset=utf-8"), "/style.css": ("style.css", "text/css; charset=utf-8"), "/geometry.json": ("geometry.json", "application/json; charset=utf-8")}
             if path not in allowed:
                 return self.respond({"error": "Not found."}, 404)
