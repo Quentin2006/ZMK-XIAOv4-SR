@@ -1,0 +1,21 @@
+# Kconfig symbols for the Skree Custom module (repo root).
+# zephyr/module.yml points Zephyr here with `build: kconfig: Kconfig`.
+
+config SKREE_LINK_WATCHDOG
+    bool "Re-time the split link when trackball reports drop to half rate"
+    default y
+    depends on ZMK_SPLIT_ROLE_CENTRAL && ZMK_BLE
+    help
+      The left half runs two 7.5 ms Bluetooth links on one radio: it is a
+      peripheral to the host and the central to the right half. When the two
+      links' connection events overlap, the radio serves only one per slot, so
+      the trackball reports from the right half arrive in pairs every other
+      event (~15 ms) and the pointer stutters.
+
+      This watchdog watches the arrival times of the split trackball reports
+      and, when more than 35% of a 40-report window arrives bunched together,
+      changes the split link's connection interval (8.75 ms, then 7.5 ms again
+      about 150 ms later) so the events land in a different slot relative to
+      the host link. Nothing runs while the ball is idle.
+
+      Say n to leave the link timing entirely to ZMK.

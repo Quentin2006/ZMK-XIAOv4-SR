@@ -1,15 +1,10 @@
 #include "skreecustom.dtsi"
 
-&kscan0 {
-    col-gpios           // SR 0-7
-        = <&shifter 0 GPIO_ACTIVE_HIGH>
-        , <&shifter 1 GPIO_ACTIVE_HIGH>
-        , <&shifter 2 GPIO_ACTIVE_HIGH>
-        , <&shifter 3 GPIO_ACTIVE_HIGH>
-        , <&shifter 4 GPIO_ACTIVE_HIGH>
-        , <&shifter 5 GPIO_ACTIVE_HIGH>
-//      , <&shifter 6 GPIO_ACTIVE_HIGH>
-//      , <&shifter 7 GPIO_ACTIVE_HIGH>
-        ;
+// No trackball on the left half; it only receives the right half's trackball
+&spi1 {
+    status = "disabled";
 };
 
+&trackball_listener {
+    status = "okay";
+};
